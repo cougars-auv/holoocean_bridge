@@ -30,6 +30,7 @@ setup(
             "imu_converter = holoocean_bridge.imu_converter_node:main",
             "gps_converter = holoocean_bridge.gps_converter_node:main",
             "depth_converter = holoocean_bridge.depth_converter_node:main",
+            "pressure_converter = holoocean_bridge.pressure_converter_node:main",
             "mag_converter = holoocean_bridge.mag_converter_node:main",
             "dvl_converter = holoocean_bridge.dvl_converter_node:main",
             "wrench_converter = holoocean_bridge.wrench_converter_node:main",

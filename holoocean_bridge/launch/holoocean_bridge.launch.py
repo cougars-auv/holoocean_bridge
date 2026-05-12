@@ -171,6 +171,20 @@ def generate_launch_description() -> LaunchDescription:
             ),
             Node(
                 package="holoocean_bridge",
+                executable="pressure_converter",
+                name="pressure_converter_node",
+                parameters=[
+                    fleet_params,
+                    auv_params,
+                    {
+                        "use_sim_time": use_sim_time,
+                        "depth_frame": depth_link_frame,
+                        "add_noise": add_noise,
+                    },
+                ],
+            ),
+            Node(
+                package="holoocean_bridge",
                 executable="gps_converter",
                 name="gps_converter_node",
                 parameters=[
