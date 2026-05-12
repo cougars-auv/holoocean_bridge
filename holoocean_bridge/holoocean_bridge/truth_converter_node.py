@@ -80,13 +80,13 @@ class TruthConverterNode(Node):
 
         :param msg: Odometry message from DynamicsSensorOdom.
         """
-        holo_T_com = PoseStamped()
-        holo_T_com.header = msg.header
-        holo_T_com.pose = msg.pose.pose
+        p_com_in_holo = PoseStamped()
+        p_com_in_holo.header = msg.header
+        p_com_in_holo.pose = msg.pose.pose
 
         try:
-            map_T_com = self.tf_buffer.transform(
-                holo_T_com,
+            p_com_in_map = self.tf_buffer.transform(
+                p_com_in_holo,
                 self.map_frame,
                 timeout=rclpy.duration.Duration(seconds=0.1),
             )
@@ -109,26 +109,26 @@ class TruthConverterNode(Node):
             return
 
         map_T_com_tf = TransformStamped()
-        map_T_com_tf.header = map_T_com.header
+        map_T_com_tf.header = p_com_in_map.header
         map_T_com_tf.child_frame_id = self.com_frame
-        map_T_com_tf.transform.translation.x = map_T_com.pose.position.x
-        map_T_com_tf.transform.translation.y = map_T_com.pose.position.y
-        map_T_com_tf.transform.translation.z = map_T_com.pose.position.z
-        map_T_com_tf.transform.rotation = map_T_com.pose.orientation
+        map_T_com_tf.transform.translation.x = p_com_in_map.pose.position.x
+        map_T_com_tf.transform.translation.y = p_com_in_map.pose.position.y
+        map_T_com_tf.transform.translation.z = p_com_in_map.pose.position.z
+        map_T_com_tf.transform.rotation = p_com_in_map.pose.orientation
 
-        com_T_base = PoseStamped()
-        com_T_base.pose.position.x = com_T_base_tf.transform.translation.x
-        com_T_base.pose.position.y = com_T_base_tf.transform.translation.y
-        com_T_base.pose.position.z = com_T_base_tf.transform.translation.z
-        com_T_base.pose.orientation = com_T_base_tf.transform.rotation
+        p_base_in_com = PoseStamped()
+        p_base_in_com.pose.position.x = com_T_base_tf.transform.translation.x
+        p_base_in_com.pose.position.y = com_T_base_tf.transform.translation.y
+        p_base_in_com.pose.position.z = com_T_base_tf.transform.translation.z
+        p_base_in_com.pose.orientation = com_T_base_tf.transform.rotation
 
-        map_T_base = do_transform_pose(com_T_base.pose, map_T_com_tf)
+        p_base_in_map = do_transform_pose(p_base_in_com.pose, map_T_com_tf)
 
         odom_msg = Odometry()
         odom_msg.header = msg.header
         odom_msg.header.frame_id = self.map_frame
         odom_msg.child_frame_id = self.base_frame
-        odom_msg.pose.pose = map_T_base
+        odom_msg.pose.pose = p_base_in_map
         odom_msg.pose.covariance = msg.pose.covariance
         odom_msg.twist.covariance = msg.twist.covariance
 
@@ -139,10 +139,10 @@ class TruthConverterNode(Node):
             t.header.stamp = msg.header.stamp
             t.header.frame_id = self.map_frame
             t.child_frame_id = self.base_frame
-            t.transform.translation.x = map_T_base.position.x
-            t.transform.translation.y = map_T_base.position.y
-            t.transform.translation.z = map_T_base.position.z
-            t.transform.rotation = map_T_base.orientation
+            t.transform.translation.x = p_base_in_map.position.x
+            t.transform.translation.y = p_base_in_map.position.y
+            t.transform.translation.z = p_base_in_map.position.z
+            t.transform.rotation = p_base_in_map.orientation
             self.tf_broadcaster.sendTransform(t)
 
 
