@@ -15,14 +15,14 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default
-from std_msgs.msg import Float64
+from coug_interfaces.msg import ControlSetpoint
 from holoocean_interfaces.msg import DesiredCommand
 from std_msgs.msg import Header
 
 
 class HsdConverterNode(Node):
     """
-    Converts standard ROS 2 command messages into HoloOcean desired command messages.
+    Converts a ControlSetpoint message into HoloOcean desired command messages.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -31,22 +31,14 @@ class HsdConverterNode(Node):
     def __init__(self) -> None:
         super().__init__("hsd_converter_node")
 
-        self.declare_parameter("heading_topic", "heading")
-        self.declare_parameter("speed_topic", "speed")
-        self.declare_parameter("depth_topic", "depth")
+        self.declare_parameter("hsd_topic", "cmd_hsd")
         self.declare_parameter("output_heading_topic", "/heading")
         self.declare_parameter("output_speed_topic", "/speed")
         self.declare_parameter("output_depth_topic", "/depth")
         self.declare_parameter("agent_name", "auv0")
 
-        self.input_heading_topic = (
-            self.get_parameter("heading_topic").get_parameter_value().string_value
-        )
-        self.input_speed_topic = (
-            self.get_parameter("speed_topic").get_parameter_value().string_value
-        )
-        self.input_depth_topic = (
-            self.get_parameter("depth_topic").get_parameter_value().string_value
+        self.hsd_topic = (
+            self.get_parameter("hsd_topic").get_parameter_value().string_value
         )
         self.output_heading_topic = (
             self.get_parameter("output_heading_topic")
@@ -73,28 +65,15 @@ class HsdConverterNode(Node):
             DesiredCommand, self.output_depth_topic, qos_profile_system_default
         )
 
-        self.heading_sub = self.create_subscription(
-            Float64,
-            self.input_heading_topic,
-            self.heading_callback,
-            qos_profile_system_default,
-        )
-        self.speed_sub = self.create_subscription(
-            Float64,
-            self.input_speed_topic,
-            self.speed_callback,
-            qos_profile_system_default,
-        )
-        self.depth_sub = self.create_subscription(
-            Float64,
-            self.input_depth_topic,
-            self.depth_callback,
+        self.hsd_sub = self.create_subscription(
+            ControlSetpoint,
+            self.hsd_topic,
+            self.hsd_callback,
             qos_profile_system_default,
         )
 
         self.get_logger().info(
-            f"HSD converter started. Listening on {self.input_heading_topic}, "
-            f"{self.input_speed_topic}, and {self.input_depth_topic} and publishing "
+            f"HSD converter started. Listening on {self.hsd_topic} and publishing "
             f"on {self.output_heading_topic}, {self.output_speed_topic}, and "
             f"{self.output_depth_topic}."
         )
@@ -113,32 +92,15 @@ class HsdConverterNode(Node):
         msg.data = float(value)
         return msg
 
-    def heading_callback(self, msg: Float64) -> None:
+    def hsd_callback(self, msg: ControlSetpoint) -> None:
         """
-        Process heading messages (Float64).
+        Process a ControlSetpoint message and publish heading, speed, and depth separately.
 
-        :param msg: Float64 message containing the desired ENU heading.
+        :param msg: ControlSetpoint message containing heading, speed, and depth.
         """
-        out_msg = self.create_command_msg(msg.data)
-        self.output_heading_pub.publish(out_msg)
-
-    def speed_callback(self, msg: Float64) -> None:
-        """
-        Process speed messages (Float64).
-
-        :param msg: Float64 message containing the desired speed.
-        """
-        out_msg = self.create_command_msg(msg.data)
-        self.output_speed_pub.publish(out_msg)
-
-    def depth_callback(self, msg: Float64) -> None:
-        """
-        Process depth messages (Float64).
-
-        :param msg: Float64 message containing the desired depth.
-        """
-        out_msg = self.create_command_msg(max(-msg.data, 0.0))
-        self.output_depth_pub.publish(out_msg)
+        self.output_heading_pub.publish(self.create_command_msg(msg.heading))
+        self.output_speed_pub.publish(self.create_command_msg(msg.speed))
+        self.output_depth_pub.publish(self.create_command_msg(max(-msg.depth, 0.0)))
 
 
 def main(args: list[str] | None = None) -> None:
