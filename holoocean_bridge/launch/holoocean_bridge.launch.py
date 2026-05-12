@@ -249,6 +249,22 @@ def generate_launch_description() -> LaunchDescription:
             ),
             Node(
                 package="holoocean_bridge",
+                executable="dvl_odom_converter",
+                name="dvl_odom_converter_node",
+                parameters=[
+                    fleet_params,
+                    auv_params,
+                    {
+                        "use_sim_time": use_sim_time,
+                        # Fix for HoloOcean offset bug
+                        "com_frame": truth_link_frame,
+                        "dvl_frame": dvl_link_frame,
+                        "map_frame": "map",
+                    },
+                ],
+            ),
+            Node(
+                package="holoocean_bridge",
                 executable="hsd_converter",
                 name="hsd_converter_node",
                 parameters=[

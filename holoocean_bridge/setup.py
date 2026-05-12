@@ -33,6 +33,7 @@ setup(
             "pressure_converter = holoocean_bridge.pressure_converter_node:main",
             "mag_converter = holoocean_bridge.mag_converter_node:main",
             "dvl_converter = holoocean_bridge.dvl_converter_node:main",
+            "dvl_odom_converter = holoocean_bridge.dvl_odom_converter_node:main",
             "wrench_converter = holoocean_bridge.wrench_converter_node:main",
             "stereo_converter = holoocean_bridge.stereo_converter_node:main",
             "truth_converter = holoocean_bridge.truth_converter_node:main",
