@@ -137,7 +137,7 @@ class HsdConverterNode(Node):
 
         :param msg: Float64 message containing the desired depth.
         """
-        out_msg = self.create_command_msg(msg.data)
+        out_msg = self.create_command_msg(max(-msg.data, 0.0))
         self.output_depth_pub.publish(out_msg)
 
 
