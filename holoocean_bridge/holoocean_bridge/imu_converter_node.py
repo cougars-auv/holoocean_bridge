@@ -14,6 +14,7 @@
 
 import math
 import random
+import message_filters
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default
@@ -95,17 +96,20 @@ class ImuConverterNode(Node):
         self.gyro_bias = [0.0, 0.0, 0.0]
         self.last_stamp = None
 
-        self.latest_orientation = None  # (x, y, z, w)
-
-        self.imu_subscription = self.create_subscription(
-            Imu, imu_input_topic, self.imu_callback, qos_profile_system_default
+        self.imu_sub = message_filters.Subscriber(
+            self, Imu, imu_input_topic, qos_profile=qos_profile_system_default
         )
-        self.ahrs_subscription = self.create_subscription(
+        self.ahrs_sub = message_filters.Subscriber(
+            self,
             Vector3Stamped,
             ahrs_input_topic,
-            self.ahrs_callback,
-            qos_profile_system_default,
+            qos_profile=qos_profile_system_default,
         )
+        self.ts = message_filters.ApproximateTimeSynchronizer(
+            [self.imu_sub, self.ahrs_sub], queue_size=10, slop=0.05
+        )
+        self.ts.registerCallback(self.sync_callback)
+
         self.publisher = self.create_publisher(
             Imu, output_topic, qos_profile_system_default
         )
@@ -118,15 +122,16 @@ class ImuConverterNode(Node):
             f"publishing on {output_topic} and {bias_topic}."
         )
 
-    def ahrs_callback(self, msg: Vector3Stamped) -> None:
+    def sync_callback(self, imu_msg: Imu, ahrs_msg: Vector3Stamped) -> None:
         """
-        Cache the latest fused orientation (Vector3Stamped).
+        Process synchronized IMU and AHRS data.
 
-        :param msg: Vector3Stamped message containing Euler angles.
+        :param imu_msg: Imu message containing raw accelerometer and gyroscope data.
+        :param ahrs_msg: Vector3Stamped message containing fused Euler angles in degrees.
         """
-        roll_rad = math.radians(msg.vector.x)
-        pitch_rad = math.radians(msg.vector.y)
-        yaw_rad = math.radians(msg.vector.z)
+        roll_rad = math.radians(ahrs_msg.vector.x)
+        pitch_rad = math.radians(ahrs_msg.vector.y)
+        yaw_rad = math.radians(ahrs_msg.vector.z)
 
         if self.add_noise:
             roll_rad += random.gauss(0, self.ahrs_noise_sigmas[0])
@@ -134,21 +139,13 @@ class ImuConverterNode(Node):
             yaw_rad += random.gauss(0, self.ahrs_noise_sigmas[2])
 
         q = Rotation.from_euler("xyz", [roll_rad, pitch_rad, yaw_rad]).as_quat()
-        self.latest_orientation = (q[0], q[1], q[2], q[3])
 
-    def imu_callback(self, msg: Imu) -> None:
-        """
-        Process IMU sensor data (Imu).
-
-        :param msg: Imu message containing IMU data.
-        """
-        if self.latest_orientation is None:
-            return
-
-        msg.header.frame_id = self.imu_frame
+        imu_msg.header.frame_id = self.imu_frame
 
         if self.add_bias:
-            current_stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
+            current_stamp = (
+                imu_msg.header.stamp.sec + imu_msg.header.stamp.nanosec * 1e-9
+            )
             if self.last_stamp is not None:
                 dt = current_stamp - self.last_stamp
                 if dt > 0.0:
@@ -162,44 +159,44 @@ class ImuConverterNode(Node):
                         )
             self.last_stamp = current_stamp
 
-            msg.linear_acceleration.x += self.accel_bias[0]
-            msg.linear_acceleration.y += self.accel_bias[1]
-            msg.linear_acceleration.z += self.accel_bias[2]
+            imu_msg.linear_acceleration.x += self.accel_bias[0]
+            imu_msg.linear_acceleration.y += self.accel_bias[1]
+            imu_msg.linear_acceleration.z += self.accel_bias[2]
 
-            msg.angular_velocity.x += self.gyro_bias[0]
-            msg.angular_velocity.y += self.gyro_bias[1]
-            msg.angular_velocity.z += self.gyro_bias[2]
+            imu_msg.angular_velocity.x += self.gyro_bias[0]
+            imu_msg.angular_velocity.y += self.gyro_bias[1]
+            imu_msg.angular_velocity.z += self.gyro_bias[2]
 
         if self.add_noise:
-            msg.linear_acceleration.x += random.gauss(0, self.accel_noise_sigmas[0])
-            msg.linear_acceleration.y += random.gauss(0, self.accel_noise_sigmas[1])
-            msg.linear_acceleration.z += random.gauss(0, self.accel_noise_sigmas[2])
+            imu_msg.linear_acceleration.x += random.gauss(0, self.accel_noise_sigmas[0])
+            imu_msg.linear_acceleration.y += random.gauss(0, self.accel_noise_sigmas[1])
+            imu_msg.linear_acceleration.z += random.gauss(0, self.accel_noise_sigmas[2])
 
-            msg.angular_velocity.x += random.gauss(0, self.gyro_noise_sigmas[0])
-            msg.angular_velocity.y += random.gauss(0, self.gyro_noise_sigmas[1])
-            msg.angular_velocity.z += random.gauss(0, self.gyro_noise_sigmas[2])
+            imu_msg.angular_velocity.x += random.gauss(0, self.gyro_noise_sigmas[0])
+            imu_msg.angular_velocity.y += random.gauss(0, self.gyro_noise_sigmas[1])
+            imu_msg.angular_velocity.z += random.gauss(0, self.gyro_noise_sigmas[2])
 
-        msg.linear_acceleration_covariance[0] = self.accel_noise_sigmas[0] ** 2
-        msg.linear_acceleration_covariance[4] = self.accel_noise_sigmas[1] ** 2
-        msg.linear_acceleration_covariance[8] = self.accel_noise_sigmas[2] ** 2
+        imu_msg.linear_acceleration_covariance[0] = self.accel_noise_sigmas[0] ** 2
+        imu_msg.linear_acceleration_covariance[4] = self.accel_noise_sigmas[1] ** 2
+        imu_msg.linear_acceleration_covariance[8] = self.accel_noise_sigmas[2] ** 2
 
-        msg.angular_velocity_covariance[0] = self.gyro_noise_sigmas[0] ** 2
-        msg.angular_velocity_covariance[4] = self.gyro_noise_sigmas[1] ** 2
-        msg.angular_velocity_covariance[8] = self.gyro_noise_sigmas[2] ** 2
+        imu_msg.angular_velocity_covariance[0] = self.gyro_noise_sigmas[0] ** 2
+        imu_msg.angular_velocity_covariance[4] = self.gyro_noise_sigmas[1] ** 2
+        imu_msg.angular_velocity_covariance[8] = self.gyro_noise_sigmas[2] ** 2
 
-        msg.orientation.x = self.latest_orientation[0]
-        msg.orientation.y = self.latest_orientation[1]
-        msg.orientation.z = self.latest_orientation[2]
-        msg.orientation.w = self.latest_orientation[3]
+        imu_msg.orientation.x = q[0]
+        imu_msg.orientation.y = q[1]
+        imu_msg.orientation.z = q[2]
+        imu_msg.orientation.w = q[3]
 
-        msg.orientation_covariance[0] = self.ahrs_noise_sigmas[0] ** 2
-        msg.orientation_covariance[4] = self.ahrs_noise_sigmas[1] ** 2
-        msg.orientation_covariance[8] = self.ahrs_noise_sigmas[2] ** 2
+        imu_msg.orientation_covariance[0] = self.ahrs_noise_sigmas[0] ** 2
+        imu_msg.orientation_covariance[4] = self.ahrs_noise_sigmas[1] ** 2
+        imu_msg.orientation_covariance[8] = self.ahrs_noise_sigmas[2] ** 2
 
-        self.publisher.publish(msg)
+        self.publisher.publish(imu_msg)
 
         bias_msg = TwistWithCovarianceStamped()
-        bias_msg.header = msg.header
+        bias_msg.header = imu_msg.header
         bias_msg.twist.twist.linear.x = self.accel_bias[0]
         bias_msg.twist.twist.linear.y = self.accel_bias[1]
         bias_msg.twist.twist.linear.z = self.accel_bias[2]

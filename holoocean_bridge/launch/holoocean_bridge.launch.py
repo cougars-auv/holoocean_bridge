@@ -318,6 +318,18 @@ def generate_launch_description() -> LaunchDescription:
             ),
             Node(
                 package="holoocean_bridge",
+                executable="modem_status_converter",
+                name="modem_status_converter_node",
+                parameters=[
+                    fleet_params,
+                    auv_params,
+                    {
+                        "use_sim_time": use_sim_time,
+                    },
+                ],
+            ),
+            Node(
+                package="holoocean_bridge",
                 executable="stereo_converter",
                 name="stereo_converter_node",
                 parameters=[

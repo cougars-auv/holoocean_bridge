@@ -23,6 +23,8 @@ from tf2_ros import Buffer, TransformListener
 from tf2_geometry_msgs import do_transform_pose
 from scipy.spatial.transform import Rotation
 
+_Q_NED_ENU = Rotation.from_quat([math.sqrt(0.5), math.sqrt(0.5), 0.0, 0.0]).inv()
+
 
 class DvlOdomConverterNode(Node):
     """
@@ -31,8 +33,6 @@ class DvlOdomConverterNode(Node):
     :author: Nelson Durrant
     :date: May 2026
     """
-
-    _Q_NED_ENU = [math.sqrt(0.5), math.sqrt(0.5), 0.0, 0.0]  # [x, y, z, w]
 
     def __init__(self) -> None:
         super().__init__("dvl_odom_converter_node")
@@ -131,7 +131,7 @@ class DvlOdomConverterNode(Node):
 
         q = p_dvl_in_map.orientation
         q_enu_b = Rotation.from_quat([q.x, q.y, q.z, q.w])
-        q_ned_b = Rotation.from_quat(self._Q_NED_ENU) * q_enu_b
+        q_ned_b = _Q_NED_ENU * q_enu_b
         roll, pitch, yaw = q_ned_b.as_euler("xyz", degrees=True)
 
         dvl_msg = DVLDR()

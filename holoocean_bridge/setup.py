@@ -40,6 +40,7 @@ setup(
             "fin_state_publisher = holoocean_bridge.fin_state_publisher_node:main",
             "cmd_vel_converter = holoocean_bridge.cmd_vel_converter_node:main",
             "hsd_converter = holoocean_bridge.hsd_converter_node:main",
+            "modem_status_converter = holoocean_bridge.modem_status_converter_node:main",
         ],
     },
 )

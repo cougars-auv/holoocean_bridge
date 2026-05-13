@@ -20,6 +20,7 @@
   <depend>python3-pymap3d</depend>
   <depend>python3-scipy</depend>
   <depend>message_filters</depend>
+  <depend>seatrac_interfaces</depend>
 
   <test_depend>python3-pytest</test_depend>
 
