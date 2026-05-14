@@ -39,7 +39,7 @@ class ImuConverterNode(Node):
         self.declare_parameter("imu_input_topic", "IMUSensor")
         self.declare_parameter("ahrs_input_topic", "RotationSensor")
         self.declare_parameter("output_topic", "imu/data")
-        self.declare_parameter("bias_topic", "imu_bias")
+        self.declare_parameter("bias_topic", "imu/bias")
         self.declare_parameter("imu_frame", "imu_link")
         self.declare_parameter("accel_noise_sigmas", [0.0078, 0.0078, 0.0078])
         self.declare_parameter("gyro_noise_sigmas", [0.0012, 0.0012, 0.0012])
