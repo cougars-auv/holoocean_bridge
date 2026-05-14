@@ -172,7 +172,7 @@ class WrenchConverterNode(Node):
         :param msg: Twist message containing current velocity in the world frame.
         """
         try:
-            t_wrench_map = self.tf_buffer.lookup_transform(
+            wrench_T_map_tf = self.tf_buffer.lookup_transform(
                 self.wrench_frame, self.map_frame, rclpy.time.Time()
             )
 
@@ -180,7 +180,9 @@ class WrenchConverterNode(Node):
             vel_world = Vector3Stamped()
             vel_world.header = msg.header
             vel_world.vector = msg.twist.twist.linear
-            vel_wrench = tf2_geometry_msgs.do_transform_vector3(vel_world, t_wrench_map)
+            vel_wrench = tf2_geometry_msgs.do_transform_vector3(
+                vel_world, wrench_T_map_tf
+            )
             self.velocity = vel_wrench.vector.x
 
         except Exception:
