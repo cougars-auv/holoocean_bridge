@@ -16,7 +16,7 @@ import random
 import numpy as np
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_system_default
+from rclpy.qos import qos_profile_sensor_data, qos_profile_system_default
 from geometry_msgs.msg import TwistWithCovarianceStamped
 from dvl_msgs.msg import DVL, DVLBeam
 
@@ -75,7 +75,7 @@ class DvlConverterNode(Node):
             qos_profile_system_default,
         )
         self.publisher = self.create_publisher(
-            DVL, output_topic, qos_profile_system_default
+            DVL, output_topic, qos_profile_sensor_data
         )
 
         self.get_logger().info(
