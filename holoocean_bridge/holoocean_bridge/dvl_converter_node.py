@@ -39,14 +39,13 @@ class DvlConverterNode(Node):
         self.declare_parameter("range_topic", "DVLSensorRange")
         self.declare_parameter("output_topic", "dvl/data")
         self.declare_parameter("dvl_frame", "dvl_link")
+        # TODO: Change the noise sigmas to be per beam
         self.declare_parameter("noise_sigmas", [0.02, 0.02, 0.02])
-        self.declare_parameter("add_noise", True)
+        self.declare_parameter("add_noise", False)
         self.declare_parameter("beam_elevation_deg", [22.5, 22.5, 22.5, 22.5])
         self.declare_parameter("beam_azimuth_deg", [135.0, 225.0, 315.0, 45.0])
 
-        vel_topic = (
-            self.get_parameter("vel_topic").get_parameter_value().string_value
-        )
+        vel_topic = self.get_parameter("vel_topic").get_parameter_value().string_value
         range_topic = (
             self.get_parameter("range_topic").get_parameter_value().string_value
         )
@@ -62,11 +61,8 @@ class DvlConverterNode(Node):
         self.add_noise = (
             self.get_parameter("add_noise").get_parameter_value().bool_value
         )
-        self.num_beams = len(
-            self.get_parameter("beam_elevation_deg").get_parameter_value().double_array_value
-        )
-        # TODO ask why he uses get_parameter_value()
         self.beam_tilt_deg = self.get_parameter("beam_elevation_deg").value
+        self.num_beams = len(self.beam_tilt_deg)
         self.beam_azimuth_deg = self.get_parameter("beam_azimuth_deg").value
         self.beam_geometry = self.beam_geometry_matrix(
             self.beam_tilt_deg,
@@ -136,15 +132,19 @@ class DvlConverterNode(Node):
         for i, vel in enumerate(beam_velocities):
             beam = DVLBeam()
             if self.add_noise:
-                noise = random.gauss(0, self.noise_sigmas[0])  # TODO: different noise per beam?
+                noise = random.gauss(
+                    0, self.noise_sigmas[0]
+                )  # TODO: different noise per beam?
                 beam_velocities[i] += noise
             beam.id = i
             beam.velocity = vel
             # TODO: Will change this whe we update simulator
-            beam.distance = self.range[i] 
-            beam.valid = self.range[i] > 0.0  # TODO: better validity check when we update simulator
+            beam.distance = self.range[i]
+            beam.valid = (
+                self.range[i] > 0.0
+            )  # TODO: better validity check when we update simulator
             beams.append(beam)
-             
+
         return beams
 
     def estimate_altitude_from_beams(
@@ -163,12 +163,13 @@ class DvlConverterNode(Node):
         Returns:
         estimated vertical altitude [m]
         """
-        phi_cos = np.array([np.cos(np.deg2rad(tilt)) for tilt in self.beam_tilt_deg])  # (N,)
+        phi_cos = np.array(
+            [np.cos(np.deg2rad(tilt)) for tilt in self.beam_tilt_deg]
+        )  # (N,)
         beam_dist = np.array([beam.distance for beam in beams])  # (N,)
-        vertical = beam_dist * phi_cos   # (N,)
+        vertical = beam_dist * phi_cos  # (N,)
 
-        return np.nanmean(vertical)  
-
+        return np.nanmean(vertical)
 
     def listener_callback(self, msg: TwistWithCovarianceStamped) -> None:
         """
