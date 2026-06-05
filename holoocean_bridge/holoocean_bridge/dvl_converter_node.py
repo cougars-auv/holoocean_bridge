@@ -78,7 +78,7 @@ class DvlConverterNode(Node):
         msg.header.frame_id = self.dvl_frame
 
         dvl_msg = DVL()
-        dvl_msg.header = msg.header
+        dvl_msg.header.stamp = msg.header.stamp
         dvl_msg.header.frame_id = self.dvl_frame
 
         if self.add_noise:

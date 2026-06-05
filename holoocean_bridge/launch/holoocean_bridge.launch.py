@@ -83,15 +83,15 @@ def generate_launch_description() -> LaunchDescription:
         ]
     )
 
-    # modem_link_frame = PythonExpression(
-    #     [
-    #         "'",
-    #         auv_ns,
-    #         "/modem_link' if '",
-    #         auv_ns,
-    #         "' != '' else 'modem_link'",
-    #     ]
-    # )
+    modem_link_frame = PythonExpression(
+        [
+            "'",
+            auv_ns,
+            "/modem_link' if '",
+            auv_ns,
+            "' != '' else 'modem_link'",
+        ]
+    )
 
     dvl_link_frame = PythonExpression(
         [
@@ -325,6 +325,19 @@ def generate_launch_description() -> LaunchDescription:
                     auv_params,
                     {
                         "use_sim_time": use_sim_time,
+                    },
+                ],
+            ),
+            Node(
+                package="holoocean_bridge",
+                executable="modem_converter",
+                name="modem_converter_node",
+                parameters=[
+                    fleet_params,
+                    auv_params,
+                    {
+                        "use_sim_time": use_sim_time,
+                        "modem_frame": modem_link_frame,
                     },
                 ],
             ),

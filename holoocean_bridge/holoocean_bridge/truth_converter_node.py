@@ -125,7 +125,7 @@ class TruthConverterNode(Node):
         p_base_in_map = do_transform_pose(p_base_in_com.pose, map_T_com_tf)
 
         odom_msg = Odometry()
-        odom_msg.header = msg.header
+        odom_msg.header.stamp = msg.header.stamp
         odom_msg.header.frame_id = self.map_frame
         odom_msg.child_frame_id = self.base_frame
         odom_msg.pose.pose = p_base_in_map

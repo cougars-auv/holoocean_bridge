@@ -84,7 +84,7 @@ class GpsConverterNode(Node):
         :param msg: Odometry message containing GPS data.
         """
         navsat_msg = NavSatFix()
-        navsat_msg.header = msg.header
+        navsat_msg.header.stamp = msg.header.stamp
         navsat_msg.header.frame_id = self.gps_frame
         navsat_msg.status.status = navsat_msg.status.STATUS_FIX
         navsat_msg.status.service = navsat_msg.status.SERVICE_GPS
