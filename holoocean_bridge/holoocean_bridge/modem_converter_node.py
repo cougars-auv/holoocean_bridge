@@ -94,6 +94,9 @@ class ModemConverterNode(Node):
         self.beacon_id = self.get_parameter("beacon_id").value
         self.modem_frame = self.get_parameter("modem_frame").value
 
+        self._send_queue = []
+        self._waiting_for_ack = False
+
         self.beacon_rec_sub = self.create_subscription(
             AcousticBeaconSensor,
             beacon_rec_topic,
@@ -124,9 +127,9 @@ class ModemConverterNode(Node):
 
     def _beacon_callback(self, msg: AcousticBeaconSensor) -> None:
         """
-        Process incoming acoustic beacon data from HoloOcean.
+        Convert an incoming HoloOcean beacon to a ModemRec and drain the send queue.
 
-        :param msg: AcousticBeaconSensor message containing azimuth, elevation, range, depth, and payload.
+        :param msg: Incoming acoustic beacon message from HoloOcean.
         """
         rec_cid = _MSG_TYPE_TO_REC_CID.get(msg.msg_type, _CID_DAT_REC)
 
@@ -159,12 +162,25 @@ class ModemConverterNode(Node):
 
         self.modem_rec_pub.publish(modem_rec)
 
+        self._waiting_for_ack = False
+        self._drain_send_queue()
+
     def _modem_send_callback(self, msg: ModemSend) -> None:
         """
-        Process outgoing acoustic transmission commands from the seatrac interface.
+        Queue an outgoing ModemSend and send immediately if the channel is free.
 
-        :param msg: ModemSend message containing destination, command type, and payload.
+        :param msg: Outgoing modem message to queue.
         """
+        self._send_queue.append(msg)
+        if not self._waiting_for_ack:
+            self._drain_send_queue()
+
+    def _drain_send_queue(self) -> None:
+        if not self._send_queue:
+            return
+
+        msg = self._send_queue.pop(0)
+
         beacon_send = AcousticBeaconSend()
         beacon_send.header = msg.header
         beacon_send.from_beacon = self.beacon_id
@@ -182,10 +198,12 @@ class ModemConverterNode(Node):
         cmd_update.msg_id = msg.msg_id
         cmd_update.command_status_code = _CST_OK
         cmd_update.target_id = msg.dest_id
-        cmd_update.queue_size = 0
+        cmd_update.queue_size = len(self._send_queue)
         cmd_update.time_sent = msg.header.stamp
 
         self.modem_cmd_update_pub.publish(cmd_update)
+
+        self._waiting_for_ack = True
 
 
 def main(args: list[str] | None = None) -> None:
