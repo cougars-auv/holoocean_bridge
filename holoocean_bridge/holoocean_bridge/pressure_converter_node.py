@@ -83,7 +83,7 @@ class PressureConverterNode(Node):
 
         :param msg: Odometry message containing depth in pose.pose.position.z.
         """
-        depth = msg.pose.pose.position.z
+        depth = -msg.pose.pose.position.z
 
         # pressure [Pa] = depth [m] * rho [kg/m^3] * g [m/s^2] + atmospheric_pressure [Pa]
         rho_g = self.water_density * self.gravity
