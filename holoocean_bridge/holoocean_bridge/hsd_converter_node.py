@@ -99,7 +99,9 @@ class HsdConverterNode(Node):
         :param msg: ControlSetpoint message containing heading, speed, and depth.
         """
         self.output_heading_pub.publish(self.create_command_msg(msg.heading))
-        self.output_speed_pub.publish(self.create_command_msg(msg.speed))
+        self.output_speed_pub.publish(
+            self.create_command_msg(max(0.0, min(1525.0, msg.speed)))
+        )
         self.output_depth_pub.publish(self.create_command_msg(max(-msg.depth, 0.0)))
 
 
