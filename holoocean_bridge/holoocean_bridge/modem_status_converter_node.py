@@ -21,11 +21,10 @@ from sensor_msgs.msg import Imu, MagneticField
 from scipy.spatial.transform import Rotation
 from seatrac_interfaces.msg import ModemStatus
 
-_CID_STATUS = 16  # 0x10
+from holoocean_bridge.utils import seatrac_enums as seatrac
+
 _Q_NED_ENU = Rotation.from_quat([math.sqrt(0.5), math.sqrt(0.5), 0.0, 0.0]).inv()
-_SQRT_HALF = math.sqrt(0.5)
 _ACC_RAW_SCALE = 250.0 / 9.80665  # m/s² → ADC counts
-_RAD_TO_DEG = 180.0 / math.pi  # rad/s → deg/s
 
 
 class ModemStatusConverterNode(Node):
@@ -80,7 +79,7 @@ class ModemStatusConverterNode(Node):
         modem_status_msg = ModemStatus()
         modem_status_msg.header = imu_msg.header
 
-        modem_status_msg.msg_id = _CID_STATUS
+        modem_status_msg.msg_id = seatrac.CID_STATUS
         elapsed_ns = (self.get_clock().now() - self.start_time).nanoseconds
         modem_status_msg.timestamp = elapsed_ns // 1_000_000  # ms since start
 
@@ -91,9 +90,9 @@ class ModemStatusConverterNode(Node):
         yaw_ned, pitch_ned, roll_ned = q_ned_b.as_euler("zyx", degrees=True)
 
         modem_status_msg.includes_local_attitude = True
-        modem_status_msg.attitude_yaw = max(-32768, min(32767, int(yaw_ned * 10)))
-        modem_status_msg.attitude_pitch = max(-32768, min(32767, int(pitch_ned * 10)))
-        modem_status_msg.attitude_roll = max(-32768, min(32767, int(roll_ned * 10)))
+        modem_status_msg.attitude_yaw = seatrac.clamp_int16(yaw_ned * 10.0)
+        modem_status_msg.attitude_pitch = seatrac.clamp_int16(pitch_ned * 10.0)
+        modem_status_msg.attitude_roll = seatrac.clamp_int16(roll_ned * 10.0)
 
         # Unconvert raw units and add 45° physical mounting offset of IMU chip
         ax, ay, az = (
@@ -107,12 +106,12 @@ class ModemStatusConverterNode(Node):
             imu_msg.angular_velocity.z,
         )
         modem_status_msg.includes_comp_ahrs = True
-        modem_status_msg.acc_x = _ACC_RAW_SCALE * _SQRT_HALF * (ax - ay)
-        modem_status_msg.acc_y = -_ACC_RAW_SCALE * _SQRT_HALF * (ax + ay)
+        modem_status_msg.acc_x = _ACC_RAW_SCALE * math.sqrt(0.5) * (ax - ay)
+        modem_status_msg.acc_y = -_ACC_RAW_SCALE * math.sqrt(0.5) * (ax + ay)
         modem_status_msg.acc_z = _ACC_RAW_SCALE * az
-        modem_status_msg.gyro_x = _RAD_TO_DEG * _SQRT_HALF * (gy - gx)
-        modem_status_msg.gyro_y = _RAD_TO_DEG * _SQRT_HALF * (gx + gy)
-        modem_status_msg.gyro_z = -_RAD_TO_DEG * gz
+        modem_status_msg.gyro_x = math.degrees(math.sqrt(0.5) * (gy - gx))
+        modem_status_msg.gyro_y = math.degrees(math.sqrt(0.5) * (gx + gy))
+        modem_status_msg.gyro_z = -math.degrees(gz)
         modem_status_msg.mag_x = mag_msg.magnetic_field.x
         modem_status_msg.mag_y = mag_msg.magnetic_field.y
         modem_status_msg.mag_z = mag_msg.magnetic_field.z
