@@ -17,7 +17,7 @@ import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default
 from geometry_msgs.msg import TwistWithCovarianceStamped
-from dvl_msgs.msg import DVL
+from dvl_msgs.msg import DVL, ConfigCommand
 
 
 class DvlConverterNode(Node):
@@ -35,6 +35,7 @@ class DvlConverterNode(Node):
 
         self.declare_parameter("input_topic", "DVLSensorVelocity")
         self.declare_parameter("output_topic", "dvl/data")
+        self.declare_parameter("config_command_topic", "dvl/config/command")
         self.declare_parameter("dvl_frame", "dvl_link")
         self.declare_parameter("noise_sigmas", [0.02, 0.02, 0.02])
         self.declare_parameter("add_noise", True)
@@ -44,6 +45,11 @@ class DvlConverterNode(Node):
         )
         output_topic = (
             self.get_parameter("output_topic").get_parameter_value().string_value
+        )
+        config_command_topic = (
+            self.get_parameter("config_command_topic")
+            .get_parameter_value()
+            .string_value
         )
         self.dvl_frame = (
             self.get_parameter("dvl_frame").get_parameter_value().string_value
@@ -55,10 +61,18 @@ class DvlConverterNode(Node):
             self.get_parameter("add_noise").get_parameter_value().bool_value
         )
 
+        self.acoustic_enabled = True
+
         self.subscription = self.create_subscription(
             TwistWithCovarianceStamped,
             input_topic,
             self.listener_callback,
+            qos_profile_system_default,
+        )
+        self.config_subscription = self.create_subscription(
+            ConfigCommand,
+            config_command_topic,
+            self.config_callback,
             qos_profile_system_default,
         )
         self.publisher = self.create_publisher(
@@ -69,12 +83,29 @@ class DvlConverterNode(Node):
             f"DVL converter started. Listening on {input_topic} and publishing on {output_topic}."
         )
 
+    def config_callback(self, msg: ConfigCommand) -> None:
+        """
+        Toggle acoustics from a DVL set_config command.
+
+        :param msg: ConfigCommand message containing DVL config data.
+        """
+        if msg.command != "set_config" or msg.parameter_name != "acoustic_enabled":
+            return
+
+        self.acoustic_enabled = msg.parameter_value.strip().lower() == "true"
+        self.get_logger().info(
+            f"DVL acoustics {'enabled' if self.acoustic_enabled else 'disabled'}."
+        )
+
     def listener_callback(self, msg: TwistWithCovarianceStamped) -> None:
         """
         Process DVL sensor data (TwistWithCovarianceStamped).
 
         :param msg: TwistWithCovarianceStamped message containing DVL data.
         """
+        if not self.acoustic_enabled:
+            return
+
         msg.header.frame_id = self.dvl_frame
 
         dvl_msg = DVL()
