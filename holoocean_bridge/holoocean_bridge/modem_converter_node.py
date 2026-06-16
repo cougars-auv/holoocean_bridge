@@ -19,52 +19,7 @@ from rclpy.qos import qos_profile_system_default
 from holoocean_interfaces.msg import AcousticBeaconSensor, AcousticBeaconSend
 from seatrac_interfaces.msg import ModemRec, ModemSend, ModemCmdUpdate
 
-_CID_NAV_QUERY_SEND = 0x50
-_CID_PING_REQ = 0x41
-_CID_PING_RESP = 0x42
-_CID_DAT_REC = 0x61
-_CID_NAV_QUERY_REQ = 0x51
-_CID_NAV_QUERY_RESP = 0x52
-_CST_OK = 0x00
-
-_AMSGTYPE_TO_MSG_TYPE = {
-    0: "OWAY",
-    1: "OWAYU",
-    2: "MSG_REQ",
-    3: "MSG_RESP",
-    4: "MSG_REQU",
-    5: "MSG_RESPU",
-    6: "MSG_REQX",
-    7: "MSG_RESPX",
-}
-
-_MSG_TYPE_TO_REC_CID = {
-    "OWAY": _CID_DAT_REC,
-    "OWAYU": _CID_DAT_REC,
-    "MSG_REQ": _CID_PING_REQ,
-    "MSG_RESP": _CID_PING_RESP,
-    "MSG_REQU": _CID_PING_REQ,
-    "MSG_RESPU": _CID_PING_RESP,
-    "MSG_REQX": _CID_NAV_QUERY_REQ,
-    "MSG_RESPX": _CID_NAV_QUERY_RESP,
-}
-
-_HAS_USBL = {"OWAYU", "MSG_REQU", "MSG_RESPU", "MSG_REQX", "MSG_RESPX"}
-_HAS_RANGE = {"MSG_RESPU", "MSG_RESPX"}
-_HAS_Z = {"MSG_REQX", "MSG_RESPX"}
-
-_RAD_TO_DEG = 180.0 / math.pi
-_INT16_MAX = 32767
-_INT16_MIN = -32768
-_UINT16_MAX = 65535
-
-
-def _clamp_int16(v: float) -> int:
-    return max(_INT16_MIN, min(_INT16_MAX, int(round(v))))
-
-
-def _clamp_uint16(v: float) -> int:
-    return max(0, min(_UINT16_MAX, int(round(v))))
+from holoocean_bridge.utils import seatrac_enums as seatrac
 
 
 class ModemConverterNode(Node):
@@ -85,28 +40,50 @@ class ModemConverterNode(Node):
         self.declare_parameter("modem_cmd_update_topic", "modem_cmd_update")
         self.declare_parameter("beacon_id", 1)
         self.declare_parameter("modem_frame", "modem_link")
+        self.declare_parameter("send_delay_sec", 0.4)
 
-        beacon_rec_topic = self.get_parameter("beacon_rec_topic").value
-        beacon_send_topic = self.get_parameter("beacon_send_topic").value
-        modem_rec_topic = self.get_parameter("modem_rec_topic").value
-        modem_send_topic = self.get_parameter("modem_send_topic").value
-        modem_cmd_update_topic = self.get_parameter("modem_cmd_update_topic").value
-        self.beacon_id = self.get_parameter("beacon_id").value
-        self.modem_frame = self.get_parameter("modem_frame").value
+        beacon_rec_topic = (
+            self.get_parameter("beacon_rec_topic").get_parameter_value().string_value
+        )
+        beacon_send_topic = (
+            self.get_parameter("beacon_send_topic").get_parameter_value().string_value
+        )
+        modem_rec_topic = (
+            self.get_parameter("modem_rec_topic").get_parameter_value().string_value
+        )
+        modem_send_topic = (
+            self.get_parameter("modem_send_topic").get_parameter_value().string_value
+        )
+        modem_cmd_update_topic = (
+            self.get_parameter("modem_cmd_update_topic")
+            .get_parameter_value()
+            .string_value
+        )
+        self.beacon_id = (
+            self.get_parameter("beacon_id").get_parameter_value().integer_value
+        )
+        self.modem_frame = (
+            self.get_parameter("modem_frame").get_parameter_value().string_value
+        )
+        self.send_delay_sec = (
+            self.get_parameter("send_delay_sec").get_parameter_value().double_value
+        )
 
-        self._send_queue = []
-        self._waiting_for_ack = False
+        self.send_queue = []
+        self.pending_resp_target = None
+        self.send_delay_timer = None
+        self.dat_queue = {}
 
         self.beacon_rec_sub = self.create_subscription(
             AcousticBeaconSensor,
             beacon_rec_topic,
-            self._beacon_callback,
+            self.beacon_callback,
             qos_profile_system_default,
         )
         self.modem_send_sub = self.create_subscription(
             ModemSend,
             modem_send_topic,
-            self._modem_send_callback,
+            self.modem_send_callback,
             qos_profile_system_default,
         )
 
@@ -125,36 +102,58 @@ class ModemConverterNode(Node):
             f"publishing on {modem_rec_topic}, {beacon_send_topic}, and {modem_cmd_update_topic}."
         )
 
-    def _beacon_callback(self, msg: AcousticBeaconSensor) -> None:
+    def beacon_callback(self, msg: AcousticBeaconSensor) -> None:
         """
-        Convert an incoming HoloOcean beacon to a ModemRec and drain the send queue.
+        Process an incoming HoloOcean beacon message.
 
         :param msg: Incoming acoustic beacon message from HoloOcean.
         """
-        rec_cid = _MSG_TYPE_TO_REC_CID.get(msg.msg_type, _CID_DAT_REC)
+        self.publish_modem_rec(msg)
 
+        # The real beacon firmware answers REQ messages with the queued data
+        if msg.msg_type in seatrac.REQ_TO_RESP and msg.to_beacon == self.beacon_id:
+            self.send_auto_response(msg)
+
+        # A RESP from the queried beacon frees the channel
+        if (
+            msg.msg_type in seatrac.RESP_TYPES
+            and msg.from_beacon == self.pending_resp_target
+        ):
+            self.pending_resp_target = None
+            self.drain_send_queue()
+
+    def publish_modem_rec(self, msg: AcousticBeaconSensor) -> None:
+        """
+        Convert an incoming beacon message to a ModemRec and publish it.
+
+        :param msg: Incoming acoustic beacon message from HoloOcean.
+        """
         modem_rec = ModemRec()
         modem_rec.header.stamp = msg.header.stamp
         modem_rec.header.frame_id = self.modem_frame
-        modem_rec.msg_id = rec_cid
+        modem_rec.msg_id = seatrac.CID_DAT_RECEIVE
 
-        modem_rec.local_flag = msg.to_beacon == self.beacon_id
+        modem_rec.local_flag = msg.to_beacon in (self.beacon_id, 0)
         modem_rec.dest_id = msg.to_beacon & 0xFF
         modem_rec.src_id = msg.from_beacon & 0xFF
 
-        modem_rec.includes_usbl = msg.msg_type in _HAS_USBL
+        modem_rec.includes_usbl = msg.msg_type in seatrac.HAS_USBL
         if modem_rec.includes_usbl:
-            modem_rec.usbl_azimuth = _clamp_int16(msg.azimuth * _RAD_TO_DEG * 10.0)
-            modem_rec.usbl_elevation = _clamp_int16(msg.elevation * _RAD_TO_DEG * 10.0)
+            modem_rec.usbl_azimuth = seatrac.clamp_int16(
+                math.degrees(msg.azimuth) * 10.0
+            )
+            modem_rec.usbl_elevation = seatrac.clamp_int16(
+                math.degrees(msg.elevation) * 10.0
+            )
             modem_rec.usbl_channels = 4
 
-        modem_rec.includes_range = msg.msg_type in _HAS_RANGE
+        modem_rec.includes_range = msg.msg_type in seatrac.HAS_RANGE
         if modem_rec.includes_range:
-            modem_rec.range_dist = _clamp_uint16(msg.range * 10.0)
+            modem_rec.range_dist = seatrac.clamp_uint16(msg.range * 10.0)
 
-        modem_rec.includes_position = msg.msg_type in _HAS_Z
+        modem_rec.includes_position = msg.msg_type in seatrac.HAS_Z
         if modem_rec.includes_position:
-            modem_rec.position_depth = _clamp_int16(msg.z * 10.0)
+            modem_rec.position_depth = seatrac.clamp_int16(msg.z * 10.0)
 
         payload = list(msg.msg_data[:30])
         modem_rec.packet_len = len(payload)
@@ -162,48 +161,130 @@ class ModemConverterNode(Node):
 
         self.modem_rec_pub.publish(modem_rec)
 
-        self._waiting_for_ack = False
-        self._drain_send_queue()
-
-    def _modem_send_callback(self, msg: ModemSend) -> None:
+    def send_auto_response(self, msg: AcousticBeaconSensor) -> None:
         """
-        Queue an outgoing ModemSend and send immediately if the channel is free.
+        Answer a REQ message with the matching RESP type.
 
-        :param msg: Outgoing modem message to queue.
+        :param msg: Incoming REQ beacon message to answer.
         """
-        self._send_queue.append(msg)
-        if not self._waiting_for_ack:
-            self._drain_send_queue()
+        # Consume any payload staged for the requester (or for all beacons)
+        queued = self.dat_queue.pop(int(msg.from_beacon), None) or self.dat_queue.pop(
+            0, None
+        )
 
-    def _drain_send_queue(self) -> None:
-        if not self._send_queue:
+        resp = AcousticBeaconSend()
+        resp.header.stamp = self.get_clock().now().to_msg()
+        resp.header.frame_id = self.modem_frame
+        resp.from_beacon = self.beacon_id
+        resp.to_beacon = int(msg.from_beacon)
+        resp.msg_type = seatrac.REQ_TO_RESP[msg.msg_type]
+        resp.msg_data = queued or []
+
+        self.send_queue.append((resp, False))
+        self.drain_send_queue()
+
+    def modem_send_callback(self, msg: ModemSend) -> None:
+        """
+        Process an outgoing ModemSend command.
+
+        :param msg: Outgoing modem command.
+        """
+        if msg.msg_id == seatrac.CID_DAT_QUEUE_SET:
+            self.set_dat_queue(msg)
             return
 
-        msg = self._send_queue.pop(0)
+        if msg.msg_id != seatrac.CID_DAT_SEND:
+            self.get_logger().warning(
+                f"Unsupported send CID 0x{msg.msg_id:02X}; only CID_DAT_SEND "
+                f"(0x{seatrac.CID_DAT_SEND:02X}) and CID_DAT_QUEUE_SET "
+                f"(0x{seatrac.CID_DAT_QUEUE_SET:02X}) are simulated. Dropping message."
+            )
+            return
 
         beacon_send = AcousticBeaconSend()
         beacon_send.header = msg.header
         beacon_send.from_beacon = self.beacon_id
         beacon_send.to_beacon = int(msg.dest_id)
-        if msg.msg_id == _CID_NAV_QUERY_SEND:
-            beacon_send.msg_type = "MSG_REQX"
-        else:
-            beacon_send.msg_type = _AMSGTYPE_TO_MSG_TYPE.get(msg.msg_type, "OWAY")
+        beacon_send.msg_type = seatrac.AMSGTYPE_TO_MSG_TYPE.get(msg.msg_type, "OWAY")
         beacon_send.msg_data = list(msg.packet_data[: msg.packet_len])
 
+        # Reject with CST_XCVR_BUSY if still transmitting, stay queued
+        if self.channel_busy():
+            self.publish_cmd_update(
+                seatrac.CID_DAT_SEND, msg.dest_id, seatrac.CST_XCVR_BUSY
+            )
+
+        self.send_queue.append((beacon_send, True))
+        self.drain_send_queue()
+
+    def set_dat_queue(self, msg: ModemSend) -> None:
+        """
+        Stage RESP payload data for the next REQ from dest_id (or from any
+        beacon, if dest_id is 0). An empty payload clears the staged data.
+
+        :param msg: CID_DAT_QUEUE_SET modem command with the payload to stage.
+        """
+        payload = list(msg.packet_data[: msg.packet_len])
+        if payload:
+            self.dat_queue[int(msg.dest_id)] = payload
+        else:
+            self.dat_queue.pop(int(msg.dest_id), None)
+
+        self.publish_cmd_update(seatrac.CID_DAT_QUEUE_SET, msg.dest_id)
+
+    def channel_busy(self) -> bool:
+        """
+        Report whether the acoustic channel is in use.
+        """
+        return self.send_delay_timer is not None or self.pending_resp_target is not None
+
+    def drain_send_queue(self) -> None:
+        """
+        Transmit the next queued send if the channel is free.
+        """
+        if self.channel_busy() or not self.send_queue:
+            return
+
+        beacon_send, is_command = self.send_queue.pop(0)
         self.beacon_send_pub.publish(beacon_send)
 
+        if is_command:
+            # Transmission always succeeds in sim
+            self.publish_cmd_update(seatrac.CID_DAT_SEND, beacon_send.to_beacon)
+
+        # A REQ holds the channel until its RESP arrives
+        if beacon_send.msg_type in seatrac.REQ_TO_RESP:
+            self.pending_resp_target = int(beacon_send.to_beacon)
+        else:
+            self.send_delay_timer = self.create_timer(
+                self.send_delay_sec, self.send_delay_callback
+            )
+
+    def send_delay_callback(self) -> None:
+        if self.send_delay_timer is not None:
+            self.destroy_timer(self.send_delay_timer)
+            self.send_delay_timer = None
+        self.drain_send_queue()
+
+    def publish_cmd_update(
+        self, msg_id: int, target_id: int, status: int = seatrac.CST_OK
+    ) -> None:
+        """
+        Publish a ModemCmdUpdate for a modem command.
+
+        :param msg_id: CID of the acknowledged command.
+        :param target_id: Beacon ID the command was addressed to.
+        :param status: Command status code (CST_E).
+        """
         cmd_update = ModemCmdUpdate()
         cmd_update.header.stamp = self.get_clock().now().to_msg()
-        cmd_update.msg_id = msg.msg_id
-        cmd_update.command_status_code = _CST_OK
-        cmd_update.target_id = msg.dest_id
-        cmd_update.queue_size = len(self._send_queue)
-        cmd_update.time_sent = msg.header.stamp
+        cmd_update.msg_id = msg_id
+        cmd_update.command_status_code = status
+        cmd_update.target_id = target_id & 0xFF
+        cmd_update.queue_size = len(self.send_queue)
+        cmd_update.time_sent = cmd_update.header.stamp
 
         self.modem_cmd_update_pub.publish(cmd_update)
-
-        self._waiting_for_ack = True
 
 
 def main(args: list[str] | None = None) -> None:
