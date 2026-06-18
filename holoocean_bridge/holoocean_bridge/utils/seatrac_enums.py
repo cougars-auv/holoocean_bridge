@@ -28,11 +28,13 @@ AMSGTYPE_TO_MSG_TYPE = {
 CID_STATUS = 0x10
 CID_DAT_SEND = 0x60
 CID_DAT_RECEIVE = 0x61
+CID_DAT_ERROR = 0x63
 CID_DAT_QUEUE_SET = 0x64
 
 # Command status codes (CST_E)
 CST_OK = 0x00
 CST_XCVR_BUSY = 0x30
+CST_XCVR_RESP_TIMEOUT = 0x34
 
 # REQ message types and the RESP types that answer them
 REQ_TO_RESP = {

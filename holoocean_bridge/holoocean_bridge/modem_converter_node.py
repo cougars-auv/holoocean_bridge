@@ -40,7 +40,9 @@ class ModemConverterNode(Node):
         self.declare_parameter("modem_cmd_update_topic", "modem_cmd_update")
         self.declare_parameter("beacon_id", 1)
         self.declare_parameter("modem_frame", "modem_link")
+        self.declare_parameter("tick_period_sec", 0.1)
         self.declare_parameter("send_delay_sec", 0.4)
+        self.declare_parameter("resp_timeout_sec", 4.0)
 
         beacon_rec_topic = (
             self.get_parameter("beacon_rec_topic").get_parameter_value().string_value
@@ -65,13 +67,27 @@ class ModemConverterNode(Node):
         self.modem_frame = (
             self.get_parameter("modem_frame").get_parameter_value().string_value
         )
+        self.tick_period_sec = (
+            self.get_parameter("tick_period_sec").get_parameter_value().double_value
+        )
         self.send_delay_sec = (
             self.get_parameter("send_delay_sec").get_parameter_value().double_value
+        )
+        self.resp_timeout_sec = (
+            self.get_parameter("resp_timeout_sec").get_parameter_value().double_value
+        )
+
+        self.send_delay_ticks = max(
+            1, round(self.send_delay_sec / self.tick_period_sec)
+        )
+        self.resp_timeout_ticks = max(
+            1, round(self.resp_timeout_sec / self.tick_period_sec)
         )
 
         self.send_queue = []
         self.pending_resp_target = None
-        self.send_delay_timer = None
+        self.send_delay_ticker = 0
+        self.pending_resp_ticker = 0
         self.dat_queue = {}
 
         self.beacon_rec_sub = self.create_subscription(
@@ -97,6 +113,8 @@ class ModemConverterNode(Node):
             ModemCmdUpdate, modem_cmd_update_topic, qos_profile_system_default
         )
 
+        self.tick_timer = self.create_timer(self.tick_period_sec, self.tick_callback)
+
         self.get_logger().info(
             f"Modem converter started. Listening on {beacon_rec_topic} and {modem_send_topic}, "
             f"publishing on {modem_rec_topic}, {beacon_send_topic}, and {modem_cmd_update_topic}."
@@ -120,7 +138,8 @@ class ModemConverterNode(Node):
             and msg.from_beacon == self.pending_resp_target
         ):
             self.pending_resp_target = None
-            self.drain_send_queue()
+            self.pending_resp_ticker = 0
+            self.attempt_send()
 
     def publish_modem_rec(self, msg: AcousticBeaconSensor) -> None:
         """
@@ -181,7 +200,7 @@ class ModemConverterNode(Node):
         resp.msg_data = queued or []
 
         self.send_queue.append((resp, False))
-        self.drain_send_queue()
+        self.attempt_send()
 
     def modem_send_callback(self, msg: ModemSend) -> None:
         """
@@ -208,14 +227,8 @@ class ModemConverterNode(Node):
         beacon_send.msg_type = seatrac.AMSGTYPE_TO_MSG_TYPE.get(msg.msg_type, "OWAY")
         beacon_send.msg_data = list(msg.packet_data[: msg.packet_len])
 
-        # Reject with CST_XCVR_BUSY if still transmitting, stay queued
-        if self.channel_busy():
-            self.publish_cmd_update(
-                seatrac.CID_DAT_SEND, msg.dest_id, seatrac.CST_XCVR_BUSY
-            )
-
         self.send_queue.append((beacon_send, True))
-        self.drain_send_queue()
+        self.attempt_send()
 
     def set_dat_queue(self, msg: ModemSend) -> None:
         """
@@ -232,39 +245,58 @@ class ModemConverterNode(Node):
 
         self.publish_cmd_update(seatrac.CID_DAT_QUEUE_SET, msg.dest_id)
 
-    def channel_busy(self) -> bool:
+    def tick_callback(self) -> None:
         """
-        Report whether the acoustic channel is in use.
+        Refresh the send queue once per tick, timing out stale REQs.
         """
-        return self.send_delay_timer is not None or self.pending_resp_target is not None
+        # A REQ that never gets a RESP eventually times out and frees the channel
+        if self.pending_resp_target is not None:
+            self.pending_resp_ticker += 1
+            if self.pending_resp_ticker >= self.resp_timeout_ticks:
+                self.publish_cmd_update(
+                    seatrac.CID_DAT_ERROR,
+                    self.pending_resp_target,
+                    seatrac.CST_XCVR_RESP_TIMEOUT,
+                )
+                self.pending_resp_target = None
+                self.pending_resp_ticker = 0
 
-    def drain_send_queue(self) -> None:
+        self.attempt_send()
+
+        if self.send_delay_ticker > 0:
+            self.send_delay_ticker -= 1
+
+    def attempt_send(self) -> None:
         """
-        Transmit the next queued send if the channel is free.
+        Transmit the next queued send, or reject it with CST_XCVR_BUSY if the channel is in use.
         """
-        if self.channel_busy() or not self.send_queue:
+        if not self.send_queue or self.send_delay_ticker > 0:
             return
 
-        beacon_send, is_command = self.send_queue.pop(0)
+        beacon_send, is_command = self.send_queue[0]
+
+        # The channel is held while a prior REQ awaits its RESP
+        if self.pending_resp_target is not None:
+            if is_command:
+                self.publish_cmd_update(
+                    seatrac.CID_DAT_SEND, beacon_send.to_beacon, seatrac.CST_XCVR_BUSY
+                )
+            self.send_delay_ticker = self.send_delay_ticks
+            return
+
+        self.send_queue.pop(0)
         self.beacon_send_pub.publish(beacon_send)
 
         if is_command:
             # Transmission always succeeds in sim
             self.publish_cmd_update(seatrac.CID_DAT_SEND, beacon_send.to_beacon)
 
-        # A REQ holds the channel until its RESP arrives
+        # A REQ holds the channel until its RESP arrives (or times out)
         if beacon_send.msg_type in seatrac.REQ_TO_RESP:
             self.pending_resp_target = int(beacon_send.to_beacon)
-        else:
-            self.send_delay_timer = self.create_timer(
-                self.send_delay_sec, self.send_delay_callback
-            )
+            self.pending_resp_ticker = 0
 
-    def send_delay_callback(self) -> None:
-        if self.send_delay_timer is not None:
-            self.destroy_timer(self.send_delay_timer)
-            self.send_delay_timer = None
-        self.drain_send_queue()
+        self.send_delay_ticker = self.send_delay_ticks
 
     def publish_cmd_update(
         self, msg_id: int, target_id: int, status: int = seatrac.CST_OK
