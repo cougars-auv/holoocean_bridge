@@ -109,6 +109,7 @@ class ModemStatusConverterNode(Node):
         modem_status_msg.acc_x = _ACC_RAW_SCALE * math.sqrt(0.5) * (ax - ay)
         modem_status_msg.acc_y = -_ACC_RAW_SCALE * math.sqrt(0.5) * (ax + ay)
         modem_status_msg.acc_z = _ACC_RAW_SCALE * az
+        # TODO: Figure out raw ADC scalar for gyroscope
         modem_status_msg.gyro_x = math.degrees(math.sqrt(0.5) * (gy - gx))
         modem_status_msg.gyro_y = math.degrees(math.sqrt(0.5) * (gx + gy))
         modem_status_msg.gyro_z = -math.degrees(gz)
