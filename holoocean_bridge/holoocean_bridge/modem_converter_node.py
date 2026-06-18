@@ -42,6 +42,7 @@ class ModemConverterNode(Node):
         self.declare_parameter("modem_frame", "modem_link")
         self.declare_parameter("tick_period_sec", 0.1)
         self.declare_parameter("send_delay_sec", 0.4)
+        self.declare_parameter("resp_delay_sec", 0.1)
         self.declare_parameter("resp_timeout_sec", 4.0)
 
         beacon_rec_topic = (
@@ -73,6 +74,9 @@ class ModemConverterNode(Node):
         self.send_delay_sec = (
             self.get_parameter("send_delay_sec").get_parameter_value().double_value
         )
+        self.resp_delay_sec = (
+            self.get_parameter("resp_delay_sec").get_parameter_value().double_value
+        )
         self.resp_timeout_sec = (
             self.get_parameter("resp_timeout_sec").get_parameter_value().double_value
         )
@@ -80,11 +84,15 @@ class ModemConverterNode(Node):
         self.send_delay_ticks = max(
             1, round(self.send_delay_sec / self.tick_period_sec)
         )
+        self.resp_delay_ticks = max(
+            0, round(self.resp_delay_sec / self.tick_period_sec)
+        )
         self.resp_timeout_ticks = max(
             1, round(self.resp_timeout_sec / self.tick_period_sec)
         )
 
         self.send_queue = []
+        self.pending_auto_responses = []
         self.pending_resp_target = None
         self.send_delay_ticker = 0
         self.pending_resp_ticker = 0
@@ -130,7 +138,7 @@ class ModemConverterNode(Node):
 
         # The real beacon firmware answers REQ messages with the queued data
         if msg.msg_type in seatrac.REQ_TO_RESP and msg.to_beacon == self.beacon_id:
-            self.send_auto_response(msg)
+            self.queue_auto_response(msg)
 
         # A RESP from the queried beacon frees the channel
         if (
@@ -180,9 +188,9 @@ class ModemConverterNode(Node):
 
         self.modem_rec_pub.publish(modem_rec)
 
-    def send_auto_response(self, msg: AcousticBeaconSensor) -> None:
+    def queue_auto_response(self, msg: AcousticBeaconSensor) -> None:
         """
-        Answer a REQ message with the matching RESP type.
+        Answer a REQ message with the matching RESP type, after a response delay.
 
         :param msg: Incoming REQ beacon message to answer.
         """
@@ -199,7 +207,10 @@ class ModemConverterNode(Node):
         resp.msg_type = seatrac.REQ_TO_RESP[msg.msg_type]
         resp.msg_data = queued or []
 
-        self.send_queue.append((resp, False))
+        if self.resp_delay_ticks <= 0:
+            self.send_queue.append((resp, False))
+        else:
+            self.pending_auto_responses.append([resp, self.resp_delay_ticks])
         self.attempt_send()
 
     def modem_send_callback(self, msg: ModemSend) -> None:
@@ -261,10 +272,25 @@ class ModemConverterNode(Node):
                 self.pending_resp_target = None
                 self.pending_resp_ticker = 0
 
+        self.release_auto_responses()
         self.attempt_send()
 
         if self.send_delay_ticker > 0:
             self.send_delay_ticker -= 1
+
+    def release_auto_responses(self) -> None:
+        """
+        Queue staged auto-responses whose response delay has elapsed.
+        """
+        ready = []
+        for item in self.pending_auto_responses:
+            item[1] -= 1
+            if item[1] <= 0:
+                ready.append(item)
+
+        for item in ready:
+            self.pending_auto_responses.remove(item)
+            self.send_queue.append((item[0], False))
 
     def attempt_send(self) -> None:
         """
