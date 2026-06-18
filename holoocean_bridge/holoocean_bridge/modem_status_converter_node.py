@@ -60,6 +60,7 @@ class ModemStatusConverterNode(Node):
         )
         self.ts.registerCallback(self.sync_callback)
 
+        # Reliable QoS to match BYU-FROST-Lab/seatrac-ros2
         self.publisher = self.create_publisher(
             ModemStatus, output_topic, qos_profile_system_default
         )

@@ -68,6 +68,7 @@ class PressureConverterNode(Node):
         self.subscription = self.create_subscription(
             Odometry, input_topic, self.listener_callback, qos_profile_system_default
         )
+        # Reliable QoS to match BYU-FROST-Lab/pressure_sensor_ros2
         self.publisher = self.create_publisher(
             FluidPressure, output_topic, qos_profile_system_default
         )

@@ -58,6 +58,7 @@ class MagConverterNode(Node):
             self.listener_callback,
             qos_profile_system_default,
         )
+        # Reliable QoS to match SBG-SYSTEMS/sbg_ros2_driver
         self.publisher = self.create_publisher(
             MagneticField, output_topic, qos_profile_system_default
         )

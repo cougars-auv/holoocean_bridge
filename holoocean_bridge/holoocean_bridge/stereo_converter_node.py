@@ -14,7 +14,7 @@
 
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_system_default
+from rclpy.qos import qos_profile_sensor_data, qos_profile_system_default
 from sensor_msgs.msg import Image, CameraInfo
 import message_filters
 
@@ -51,16 +51,16 @@ class StereoConverterNode(Node):
         self.back_stereo_frame = self.get_parameter("back_stereo_frame").value
 
         self.front_pub = self.create_publisher(
-            Image, self.front_output_topic, qos_profile_system_default
+            Image, self.front_output_topic, qos_profile_sensor_data
         )
         self.back_pub = self.create_publisher(
-            Image, self.back_output_topic, qos_profile_system_default
+            Image, self.back_output_topic, qos_profile_sensor_data
         )
         self.front_info_pub = self.create_publisher(
-            CameraInfo, self.front_stereo_info_topic, qos_profile_system_default
+            CameraInfo, self.front_stereo_info_topic, qos_profile_sensor_data
         )
         self.back_info_pub = self.create_publisher(
-            CameraInfo, self.back_stereo_info_topic, qos_profile_system_default
+            CameraInfo, self.back_stereo_info_topic, qos_profile_sensor_data
         )
 
         self.front_sub = message_filters.Subscriber(

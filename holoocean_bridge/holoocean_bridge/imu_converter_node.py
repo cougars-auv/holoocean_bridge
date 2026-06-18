@@ -110,6 +110,7 @@ class ImuConverterNode(Node):
         )
         self.ts.registerCallback(self.sync_callback)
 
+        # Reliable QoS to match SBG-SYSTEMS/sbg_ros2_driver
         self.publisher = self.create_publisher(
             Imu, output_topic, qos_profile_system_default
         )

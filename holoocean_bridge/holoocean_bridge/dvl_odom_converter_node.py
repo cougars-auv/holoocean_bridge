@@ -15,7 +15,7 @@
 import math
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_system_default
+from rclpy.qos import qos_profile_sensor_data, qos_profile_system_default
 from geometry_msgs.msg import TransformStamped, PoseStamped
 from nav_msgs.msg import Odometry
 from dvl_msgs.msg import DVLDR
@@ -59,7 +59,7 @@ class DvlOdomConverterNode(Node):
         )
 
         self.publisher = self.create_publisher(
-            DVLDR, output_topic, qos_profile_system_default
+            DVLDR, output_topic, qos_profile_sensor_data
         )
 
         self.tf_buffer = Buffer()

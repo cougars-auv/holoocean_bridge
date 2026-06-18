@@ -15,7 +15,7 @@
 import random
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import qos_profile_system_default
+from rclpy.qos import qos_profile_sensor_data, qos_profile_system_default
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import NavSatFix
 import pymap3d as pm
@@ -70,7 +70,7 @@ class GpsConverterNode(Node):
             Odometry, input_topic, self.listener_callback, qos_profile_system_default
         )
         self.publisher = self.create_publisher(
-            NavSatFix, output_topic, qos_profile_system_default
+            NavSatFix, output_topic, qos_profile_sensor_data
         )
 
         self.get_logger().info(
