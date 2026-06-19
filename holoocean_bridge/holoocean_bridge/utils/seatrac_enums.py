@@ -46,8 +46,8 @@ RESP_TYPES = set(REQ_TO_RESP.values())
 
 # Message types that carry USBL angles, range, and depth fields
 HAS_USBL = {"OWAYU", "MSG_REQU", "MSG_RESPU", "MSG_REQX", "MSG_RESPX"}
-HAS_RANGE = {"MSG_RESPU", "MSG_RESPX"}
-HAS_Z = {"MSG_REQX", "MSG_RESPX"}
+HAS_RANGE = {"MSG_RESP", "MSG_RESPU", "MSG_RESPX"}
+HAS_Z = {"MSG_RESPU", "MSG_RESPX"}
 
 
 def clamp_int16(v: float) -> int:
