@@ -42,7 +42,7 @@ class ModemConverterNode(Node):
         self.declare_parameter("modem_frame", "modem_link")
         self.declare_parameter("tick_period_sec", 0.1)
         self.declare_parameter("send_delay_sec", 0.4)
-        self.declare_parameter("resp_delay_sec", 0.2)
+        self.declare_parameter("resp_delay_sec", 0.0)
         self.declare_parameter("resp_timeout_sec", 4.0)
 
         beacon_rec_topic = (
