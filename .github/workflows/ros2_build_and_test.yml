@@ -59,7 +59,7 @@ jobs:
           AFTER_SETUP_UPSTREAM_WORKSPACE: |
             git config --global --add safe.directory "*"
             vcs custom -n --git --args submodule update --init --recursive
-          BEFORE_RUN_TARGET_TEST: |
+          BEFORE_RUN_TARGET_TEST_EMBED: |
             apt-get update && apt-get install -y python3-pytest-cov
             export COVERAGE_FILE="${{ github.workspace }}/.work/target_ws/.coverage_py"
             export PYTEST_ADDOPTS="${{ matrix.runner == 'ubuntu-24.04' && '--cov --cov-append --cov-report=' || '' }}"
