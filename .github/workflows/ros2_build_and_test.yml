@@ -72,8 +72,9 @@ jobs:
           python3 -m pip install --break-system-packages -q coverage
           covs=$(find ${{ github.workspace }}/.work/target_ws/build -maxdepth 2 -name .coverage 2>/dev/null || true)
           if [ -n "$covs" ]; then
+            export COVERAGE_FILE=${{ github.workspace }}/.coverage
             cd ${{ github.workspace }}/.work/target_ws/src/${{ github.event.repository.name }}
-            python3 -m coverage combine $covs
+            python3 -m coverage combine --keep $covs
             python3 -m coverage xml -o ${{ github.workspace }}/coverage-py.xml --ignore-errors --omit='/usr/*,/opt/*,*/test/*,*/tests/*,*/install/*,*/build/*'
             sed -i "s|${{ github.workspace }}/.work/target_ws/src/${{ github.event.repository.name }}|${{ github.workspace }}|g" ${{ github.workspace }}/coverage-py.xml
           fi
