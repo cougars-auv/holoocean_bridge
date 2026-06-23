@@ -59,6 +59,10 @@ jobs:
           AFTER_SETUP_UPSTREAM_WORKSPACE: |
             git config --global --add safe.directory "*"
             vcs custom -n --git --args submodule update --init --recursive
+          BEFORE_RUN_TARGET_TEST: |
+            apt-get update && apt-get install -y python3-pytest-cov
+            export COVERAGE_FILE="${{ github.workspace }}/.work/target_ws/.coverage_py"
+            export PYTEST_ADDOPTS="${{ matrix.runner == 'ubuntu-24.04' && '--cov --cov-append --cov-report=' || '' }}"
       - if: matrix.runner == 'ubuntu-24.04'
         run: |
           sudo apt-get update && sudo apt-get install -y lcov
@@ -66,9 +70,15 @@ jobs:
           lcov --remove coverage.info '/usr/*' '/opt/*' '*/test/*' '*/tests/*' '*/install/*' '*/build/*' --output-file coverage.info --ignore-errors mismatch,gcov,unused,empty
           sed -i "s|${{ github.workspace }}/.work/target_ws/src/${{ github.event.repository.name }}|${{ github.workspace }}|g" coverage.info
       - if: matrix.runner == 'ubuntu-24.04'
+        run: |
+          python3 -m pip install --break-system-packages -q coverage
+          export COVERAGE_FILE=${{ github.workspace }}/.work/target_ws/.coverage_py
+          python3 -m coverage xml -o coverage-py.xml --ignore-errors --omit='/usr/*,/opt/*,*/test/*,*/tests/*,*/install/*,*/build/*' || true
+          sed -i "s|${{ github.workspace }}/.work/target_ws/src/${{ github.event.repository.name }}|${{ github.workspace }}|g" coverage-py.xml || true
+      - if: matrix.runner == 'ubuntu-24.04'
         uses: codecov/codecov-action@v6
         with:
-          files: coverage.info
+          files: coverage.info,coverage-py.xml
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
