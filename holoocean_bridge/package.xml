@@ -7,20 +7,20 @@
   <maintainer email="snelsondurrant@gmail.com">snelsondurrant</maintainer>
   <license>Apache-2.0</license>
 
-  <depend>rclpy</depend>
   <depend>coug_interfaces</depend>
-  <depend>std_msgs</depend>
-  <depend>geometry_msgs</depend>
-  <depend>nav_msgs</depend>
-  <depend>sensor_msgs</depend>
   <depend>dvl_msgs</depend>
+  <depend>geometry_msgs</depend>
   <depend>holoocean_interfaces</depend>
-  <depend>tf2_ros</depend>
-  <depend>tf2_geometry_msgs</depend>
+  <depend>message_filters</depend>
+  <depend>nav_msgs</depend>
   <depend>python3-pymap3d</depend>
   <depend>python3-scipy</depend>
-  <depend>message_filters</depend>
+  <depend>rclpy</depend>
   <depend>seatrac_interfaces</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_ros</depend>
 
   <test_depend>python3-pytest</test_depend>
   <test_depend>python3-pytest-cov</test_depend>
