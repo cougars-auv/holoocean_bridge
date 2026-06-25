@@ -1,5 +1,5 @@
 fixes:
-  - "/home/runner/work/holoocean_bridge/holoocean_bridge/.work/target_ws/src/holoocean_bridge/::"
+  - "**/target_ws/src/*/::"
 
 ignore:
   - "**/test/**"
