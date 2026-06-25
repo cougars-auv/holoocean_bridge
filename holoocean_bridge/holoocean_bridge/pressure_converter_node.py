@@ -32,7 +32,7 @@ class PressureConverterNode(Node):
         super().__init__("pressure_converter_node")
 
         self.declare_parameter("input_topic", "DepthSensor")
-        self.declare_parameter("output_topic", "pressure")
+        self.declare_parameter("output_topic", "pressure/data")
         self.declare_parameter("depth_frame", "depth_link")
         self.declare_parameter("water_density", 997.0)
         self.declare_parameter("gravity", 9.81)
