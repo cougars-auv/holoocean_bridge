@@ -1,0 +1,6 @@
+fixes:
+  - "/home/runner/work/holoocean_bridge/holoocean_bridge/.work/target_ws/src/holoocean_bridge/::"
+
+ignore:
+  - "**/test/**"
+  - "**/setup.py"
