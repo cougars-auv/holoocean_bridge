@@ -64,7 +64,7 @@ jobs:
             git config --global --add safe.directory "*"
             vcs custom -n --git --args submodule update --init --recursive
       - if: matrix.runner == 'ubuntu-24.04'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
