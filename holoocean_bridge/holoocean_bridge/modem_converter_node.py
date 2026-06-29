@@ -18,6 +18,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default
 from holoocean_interfaces.msg import AcousticBeaconSensor, AcousticBeaconSend
 from seatrac_interfaces.msg import ModemRec, ModemSend, ModemCmdUpdate
+from nav_msgs.msg import Odometry
 
 from holoocean_bridge.utils import seatrac_enums as seatrac
 
@@ -38,6 +39,7 @@ class ModemConverterNode(Node):
         self.declare_parameter("modem_rec_topic", "modem_rec")
         self.declare_parameter("modem_send_topic", "modem_send")
         self.declare_parameter("modem_cmd_update_topic", "modem_cmd_update")
+        self.declare_parameter("depth_topic", "DepthSensor")
         self.declare_parameter("beacon_id", 1)
         self.declare_parameter("modem_frame", "modem_link")
         self.declare_parameter("tick_period_sec", 0.1)
@@ -61,6 +63,9 @@ class ModemConverterNode(Node):
             self.get_parameter("modem_cmd_update_topic")
             .get_parameter_value()
             .string_value
+        )
+        depth_topic = (
+            self.get_parameter("depth_topic").get_parameter_value().string_value
         )
         self.beacon_id = (
             self.get_parameter("beacon_id").get_parameter_value().integer_value
@@ -98,6 +103,8 @@ class ModemConverterNode(Node):
         self.pending_resp_ticker = 0
         self.dat_queue = {}
 
+        self.agent_depth = 0.0
+
         self.beacon_rec_sub = self.create_subscription(
             AcousticBeaconSensor,
             beacon_rec_topic,
@@ -108,6 +115,12 @@ class ModemConverterNode(Node):
             ModemSend,
             modem_send_topic,
             self.modem_send_callback,
+            qos_profile_system_default,
+        )
+        self.depth_sub = self.create_subscription(
+            Odometry,
+            depth_topic,
+            self.depth_callback,
             qos_profile_system_default,
         )
 
@@ -127,6 +140,14 @@ class ModemConverterNode(Node):
             f"Modem converter started. Listening on {beacon_rec_topic} and {modem_send_topic}, "
             f"publishing on {modem_rec_topic}, {beacon_send_topic}, and {modem_cmd_update_topic}."
         )
+
+    def depth_callback(self, msg: Odometry) -> None:
+        """
+        Update the agent's depth.
+
+        :param msg: Odometry message containing the agent's depth.
+        """
+        self.agent_depth = -msg.pose.pose.position.z
 
     def beacon_callback(self, msg: AcousticBeaconSensor) -> None:
         """
@@ -181,9 +202,8 @@ class ModemConverterNode(Node):
         modem_rec.includes_position = msg.msg_type in seatrac.HAS_Z
         if modem_rec.includes_position:
             # TODO: Fix RESPX remote depth reading in HoloOcean (not populated)
-            # TODO: Use agent's own position to calculate depth, don't assume 0.0
             modem_rec.position_enhanced = False
-            z = -msg.range * math.sin(msg.elevation)
+            z = self.agent_depth - msg.range * math.sin(msg.elevation)
             modem_rec.position_depth = seatrac.clamp_int16(z * 10.0)
 
         payload = list(msg.msg_data[:30])
