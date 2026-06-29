@@ -90,9 +90,9 @@ class DvlOdomConverterNode(Node):
                 self.map_frame,
                 timeout=rclpy.duration.Duration(seconds=0.1),
             )
-        except Exception:
-            self.get_logger().error(
-                f"Could not transform pose from {msg.header.frame_id} to {self.map_frame}",
+        except Exception as ex:
+            self.get_logger().warn(
+                f"Could not transform {self.map_frame} to {msg.header.frame_id}: {ex}",
                 throttle_duration_sec=1.0,
             )
             return
@@ -101,9 +101,9 @@ class DvlOdomConverterNode(Node):
             com_T_dvl_tf = self.tf_buffer.lookup_transform(
                 self.com_frame, self.dvl_frame, rclpy.time.Time()
             )
-        except Exception:
-            self.get_logger().error(
-                f"Could not find transform from {self.com_frame} to {self.dvl_frame}",
+        except Exception as ex:
+            self.get_logger().warn(
+                f"Could not transform {self.com_frame} to {self.dvl_frame}: {ex}",
                 throttle_duration_sec=1.0,
             )
             return

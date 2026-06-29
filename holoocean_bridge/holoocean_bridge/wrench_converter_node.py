@@ -185,9 +185,10 @@ class WrenchConverterNode(Node):
             )
             self.velocity = vel_wrench.vector.x
 
-        except Exception:
-            self.get_logger().error(
-                "Could not transform DVL velocity.", throttle_duration_sec=1.0
+        except Exception as ex:
+            self.get_logger().warn(
+                f"Could not transform {self.wrench_frame} to {self.map_frame}: {ex}",
+                throttle_duration_sec=1.0,
             )
 
 
