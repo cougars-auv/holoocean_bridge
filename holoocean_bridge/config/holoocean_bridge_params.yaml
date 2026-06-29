@@ -72,7 +72,7 @@
   wrench_converter_node:
     ros__parameters:
       agent_topic: "/command/agent"
-      control_topic: "AgentCommand"
+      control_topic: "ControlCommand"
       velocity_topic: "VelocitySensor"
       wrench_raw_topic: "cmd_wrench_raw"
       wrench_topic: "cmd_wrench"
@@ -86,7 +86,7 @@
 
   fin_state_publisher_node:
     ros__parameters:
-      input_topic: "AgentCommand"
+      input_topic: "ControlCommand"
       output_topic: "joint_states"
 
   cmd_vel_converter_node:
