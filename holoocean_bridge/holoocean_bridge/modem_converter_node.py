@@ -28,7 +28,7 @@ class ModemConverterNode(Node):
     Bridges HoloOcean acoustic beacon data to/from seatrac_interfaces messages.
 
     :author: Nelson Durrant
-    :date: June 2026
+    :date: May 2026
     """
 
     def __init__(self) -> None:
