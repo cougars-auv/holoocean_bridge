@@ -318,6 +318,35 @@ def generate_launch_description() -> LaunchDescription:
             ),
             Node(
                 package="holoocean_bridge",
+                executable="imu_converter",
+                name="modem_imu_converter_node",
+                parameters=[
+                    fleet_params,
+                    auv_params,
+                    {
+                        "use_sim_time": use_sim_time,
+                        "imu_frame": modem_link_frame,
+                        "add_noise": add_noise,
+                        "add_bias": add_noise,
+                    },
+                ],
+            ),
+            Node(
+                package="holoocean_bridge",
+                executable="mag_converter",
+                name="modem_mag_converter_node",
+                parameters=[
+                    fleet_params,
+                    auv_params,
+                    {
+                        "use_sim_time": use_sim_time,
+                        "mag_frame": modem_link_frame,
+                        "add_noise": add_noise,
+                    },
+                ],
+            ),
+            Node(
+                package="holoocean_bridge",
                 executable="modem_status_converter",
                 name="modem_status_converter_node",
                 parameters=[
@@ -325,6 +354,21 @@ def generate_launch_description() -> LaunchDescription:
                     auv_params,
                     {
                         "use_sim_time": use_sim_time,
+                    },
+                ],
+            ),
+            Node(
+                package="holoocean_bridge",
+                executable="depth_converter",
+                name="modem_depth_converter_node",
+                parameters=[
+                    fleet_params,
+                    auv_params,
+                    {
+                        "use_sim_time": use_sim_time,
+                        "depth_frame": modem_link_frame,
+                        "map_frame": "map",
+                        "add_noise": add_noise,
                     },
                 ],
             ),

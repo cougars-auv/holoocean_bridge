@@ -39,7 +39,7 @@ class ModemConverterNode(Node):
         self.declare_parameter("modem_rec_topic", "modem_rec")
         self.declare_parameter("modem_send_topic", "modem_send")
         self.declare_parameter("modem_cmd_update_topic", "modem_cmd_update")
-        self.declare_parameter("depth_topic", "DepthSensor")
+        self.declare_parameter("depth_topic", "modem/odometry/depth")
         self.declare_parameter("beacon_id", 1)
         self.declare_parameter("modem_frame", "modem_link")
         self.declare_parameter("tick_period_sec", 0.1)

@@ -38,8 +38,8 @@ class ModemStatusConverterNode(Node):
     def __init__(self) -> None:
         super().__init__("modem_status_converter_node")
 
-        self.declare_parameter("imu_input_topic", "imu/data")
-        self.declare_parameter("mag_input_topic", "imu/mag")
+        self.declare_parameter("imu_input_topic", "modem/imu/data")
+        self.declare_parameter("mag_input_topic", "modem/imu/mag")
         self.declare_parameter("output_topic", "modem_status")
 
         imu_input_topic = self.get_parameter("imu_input_topic").value
