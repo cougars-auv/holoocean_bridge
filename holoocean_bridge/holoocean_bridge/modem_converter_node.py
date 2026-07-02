@@ -185,6 +185,8 @@ class ModemConverterNode(Node):
         modem_rec.dest_id = msg.to_beacon & 0xFF
         modem_rec.src_id = msg.from_beacon & 0xFF
 
+        modem_rec.depth_local = seatrac.clamp_int16(self.agent_depth * 10.0)
+
         modem_rec.includes_usbl = msg.msg_type in seatrac.HAS_USBL
         if modem_rec.includes_usbl:
             modem_rec.usbl_azimuth = seatrac.clamp_int16(
