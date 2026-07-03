@@ -24,7 +24,6 @@ from seatrac_interfaces.msg import ModemStatus
 from holoocean_bridge.utils import seatrac_enums as seatrac
 
 _Q_NED_ENU = Rotation.from_quat([math.sqrt(0.5), math.sqrt(0.5), 0.0, 0.0]).inv()
-_ACC_RAW_SCALE = 250.0 / 9.80665  # m/s² → ADC counts
 
 
 class ModemStatusConverterNode(Node):
@@ -95,25 +94,7 @@ class ModemStatusConverterNode(Node):
         modem_status_msg.attitude_pitch = seatrac.clamp_int16(pitch_ned * 10.0)
         modem_status_msg.attitude_roll = seatrac.clamp_int16(roll_ned * 10.0)
 
-        # Unconvert raw units and add 45° physical mounting offset of IMU chip
-        ax, ay, az = (
-            imu_msg.linear_acceleration.x,
-            imu_msg.linear_acceleration.y,
-            imu_msg.linear_acceleration.z,
-        )
-        gx, gy, gz = (
-            imu_msg.angular_velocity.x,
-            imu_msg.angular_velocity.y,
-            imu_msg.angular_velocity.z,
-        )
         modem_status_msg.includes_comp_ahrs = True
-        modem_status_msg.acc_x = _ACC_RAW_SCALE * math.sqrt(0.5) * (ax - ay)
-        modem_status_msg.acc_y = -_ACC_RAW_SCALE * math.sqrt(0.5) * (ax + ay)
-        modem_status_msg.acc_z = _ACC_RAW_SCALE * az
-        # TODO: Figure out raw ADC scalar for gyroscope
-        modem_status_msg.gyro_x = math.degrees(math.sqrt(0.5) * (gy - gx))
-        modem_status_msg.gyro_y = math.degrees(math.sqrt(0.5) * (gx + gy))
-        modem_status_msg.gyro_z = -math.degrees(gz)
         modem_status_msg.mag_x = mag_msg.magnetic_field.x
         modem_status_msg.mag_y = mag_msg.magnetic_field.y
         modem_status_msg.mag_z = mag_msg.magnetic_field.z
