@@ -31,7 +31,7 @@ class DepthConverterNode(Node):
         super().__init__("depth_converter_node")
 
         self.declare_parameter("input_topic", "DepthSensor")
-        self.declare_parameter("output_topic", "odometry/depth")
+        self.declare_parameter("output_topic", "depth/odometry")
         self.declare_parameter("depth_frame", "depth_link")
         self.declare_parameter("map_frame", "map")
         self.declare_parameter("noise_sigma", 0.02)
