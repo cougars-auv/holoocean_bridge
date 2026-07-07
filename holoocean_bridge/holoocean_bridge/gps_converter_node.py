@@ -23,7 +23,7 @@ import pymap3d as pm
 
 class GpsConverterNode(Node):
     """
-    Converts GPS data from HoloOcean to standard NavSatFix messages and adds noise.
+    ROS 2 node that converts HoloOcean GPS data to standard NavSatFix messages and adds noise.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -77,7 +77,7 @@ class GpsConverterNode(Node):
 
     def listener_callback(self, msg: Odometry) -> None:
         """
-        Process GPS sensor data (Odometry).
+        Convert HoloOcean GPS odometry into a NavSatFix message, add noise, and publish it.
 
         :param msg: Odometry message containing GPS data.
         """

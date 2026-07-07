@@ -21,7 +21,7 @@ from sensor_msgs.msg import MagneticField
 
 class MagConverterNode(Node):
     """
-    Converts magnetometer data from HoloOcean to standard MagneticField messages and adds noise.
+    ROS 2 node that converts HoloOcean magnetometer data to MagneticField messages and adds noise.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -67,7 +67,7 @@ class MagConverterNode(Node):
 
     def listener_callback(self, msg: MagneticField) -> None:
         """
-        Process Magnetic sensor data (MagneticField).
+        Add noise to a HoloOcean magnetometer reading and republish it as a MagneticField.
 
         :param msg: MagneticField message.
         """

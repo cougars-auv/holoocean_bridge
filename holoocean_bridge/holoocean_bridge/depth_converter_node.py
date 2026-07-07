@@ -21,7 +21,7 @@ from nav_msgs.msg import Odometry
 
 class DepthConverterNode(Node):
     """
-    Converts depth data from HoloOcean to odometry messages and adds noise.
+    ROS 2 node that converts HoloOcean depth data to odometry messages and adds noise.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -67,7 +67,7 @@ class DepthConverterNode(Node):
 
     def listener_callback(self, msg: Odometry) -> None:
         """
-        Process depth sensor data (Odometry).
+        Stamp the depth odometry, add measurement noise, and republish it.
 
         :param msg: Odometry message containing depth data.
         """

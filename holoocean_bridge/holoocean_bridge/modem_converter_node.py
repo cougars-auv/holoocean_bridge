@@ -25,7 +25,7 @@ from holoocean_bridge.utils import seatrac_enums as seatrac
 
 class ModemConverterNode(Node):
     """
-    Bridges HoloOcean acoustic beacon data to/from seatrac_interfaces messages.
+    ROS 2 node that bridges HoloOcean acoustic beacon data to/from seatrac_interfaces messages.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -310,7 +310,7 @@ class ModemConverterNode(Node):
             self.send_queue.append((item[0], False))
 
     def attempt_send(self) -> None:
-        """Transmit the next queued send, or reject it with CST_XCVR_BUSY if the channel is in use."""
+        """Transmit the next queued send, or reject with CST_XCVR_BUSY when the channel is busy."""
         if not self.send_queue or self.send_delay_ticker > 0:
             return
 

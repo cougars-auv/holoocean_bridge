@@ -22,7 +22,7 @@ from std_msgs.msg import Header
 
 class HsdConverterNode(Node):
     """
-    Converts a ControlSetpoint message into HoloOcean desired command messages.
+    ROS 2 node that converts a ControlSetpoint message into HoloOcean desired command messages.
 
     :author: Nelson Durrant
     :date: May 2026

@@ -1,4 +1,3 @@
-"""Module for stereo_converter_node.py."""
 # Copyright (c) 2026 BYU FROST Lab
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,7 +21,7 @@ import message_filters
 
 class StereoConverterNode(Node):
     """
-    Converts stereo camera images from HoloOcean to standard Image and CameraInfo messages.
+    ROS 2 node that converts HoloOcean stereo images to standard Image and CameraInfo messages.
 
     :author: Nelson Durrant
     :date: May 2026

@@ -25,7 +25,7 @@ from holoocean_interfaces.msg import AgentCommand
 
 class WrenchConverterNode(Node):
     """
-    Converts HoloOcean agent/control command messages back to WrenchStamped messages.
+    ROS 2 node that converts HoloOcean agent/control commands back to WrenchStamped messages.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -114,7 +114,7 @@ class WrenchConverterNode(Node):
 
     def agent_callback(self, msg: AgentCommand) -> None:
         """
-        Process agent command messages (BlueROV2).
+        Convert a BlueROV2 thruster command into a body-frame wrench and publish it.
 
         :param msg: AgentCommand message containing thruster values.
         """
@@ -135,7 +135,7 @@ class WrenchConverterNode(Node):
 
     def control_callback(self, msg: AgentCommand) -> None:
         """
-        Process control command messages (CougUV).
+        Convert a CougUV control command into a body-frame wrench and publish it.
 
         :param msg: AgentCommand message containing control surface/thruster values.
         """

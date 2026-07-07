@@ -28,7 +28,7 @@ _Q_NED_ENU = Rotation.from_quat([math.sqrt(0.5), math.sqrt(0.5), 0.0, 0.0]).inv(
 
 class ModemStatusConverterNode(Node):
     """
-    Combines processed IMU and magnetometer data into seatrac_interfaces/ModemStatus messages.
+    ROS 2 node that combines IMU and magnetometer data into a seatrac_interfaces/ModemStatus msg.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -68,7 +68,7 @@ class ModemStatusConverterNode(Node):
 
     def sync_callback(self, imu_msg: Imu, mag_msg: MagneticField) -> None:
         """
-        Process synchronized IMU and magnetometer data.
+        Combine synchronized IMU and magnetometer data into a ModemStatus and publish it.
 
         :param imu_msg: Imu message from imu_converter (with noise, bias, and fused orientation).
         :param mag_msg: MagneticField message from mag_converter (with noise).

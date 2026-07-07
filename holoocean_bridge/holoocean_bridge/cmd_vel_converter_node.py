@@ -23,7 +23,7 @@ from holoocean_interfaces.msg import AgentCommand
 
 class CmdVelConverterNode(Node):
     """
-    Converts ROS 2 cmd_vel commands to HoloOcean agent command messages.
+    ROS 2 node that converts cmd_vel commands to HoloOcean agent command messages.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -74,7 +74,7 @@ class CmdVelConverterNode(Node):
 
     def listener_callback(self, msg: TwistStamped) -> None:
         """
-        Process cmd_vel (TwistStamped) messages.
+        Convert a cmd_vel command into a HoloOcean agent command and publish it.
 
         :param msg: TwistStamped message containing linear and angular velocities.
         """

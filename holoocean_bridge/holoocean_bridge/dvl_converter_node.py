@@ -22,7 +22,7 @@ from dvl_msgs.msg import DVL, ConfigCommand
 
 class DvlConverterNode(Node):
     """
-    Converts DVL data from HoloOcean to Waterlinked DVL messages and adds noise.
+    ROS 2 node that converts HoloOcean DVL data to Waterlinked DVL messages and adds noise.
 
     Uses the Janus configuration for the DVL noise model like HoloOcean.
 
@@ -97,7 +97,7 @@ class DvlConverterNode(Node):
 
     def listener_callback(self, msg: TwistWithCovarianceStamped) -> None:
         """
-        Process DVL sensor data (TwistWithCovarianceStamped).
+        Convert HoloOcean DVL velocity into a Waterlinked DVL message, add noise, and publish it.
 
         :param msg: TwistWithCovarianceStamped message containing DVL data.
         """

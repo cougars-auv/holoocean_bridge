@@ -25,7 +25,7 @@ from scipy.spatial.transform import Rotation
 
 class ImuConverterNode(Node):
     """
-    Converts IMU + AHRS data from HoloOcean to standard IMU messages and adds noise.
+    ROS 2 node that converts HoloOcean IMU and AHRS data to standard IMU messages and adds noise.
 
     Also models IMU bias as a random walk.
 
@@ -122,7 +122,7 @@ class ImuConverterNode(Node):
 
     def sync_callback(self, imu_msg: Imu, ahrs_msg: Vector3Stamped) -> None:
         """
-        Process synchronized IMU and AHRS data.
+        Fuse synchronized IMU and AHRS data into an IMU message, add noise, and publish it.
 
         :param imu_msg: Imu message containing raw accelerometer and gyroscope data.
         :param ahrs_msg: Vector3Stamped message containing fused Euler angles in degrees.
