@@ -51,8 +51,20 @@ HAS_Z = {"MSG_RESPU", "MSG_RESPX"}
 
 
 def clamp_int16(v: float) -> int:
+    """
+    Clamp a value to the signed 16-bit integer range.
+
+    :param v: Value to clamp.
+    :return: The value rounded and clamped to [-32768, 32767].
+    """
     return max(-32768, min(32767, int(round(v))))
 
 
 def clamp_uint16(v: float) -> int:
+    """
+    Clamp a value to the unsigned 16-bit integer range.
+
+    :param v: Value to clamp.
+    :return: The value rounded and clamped to [0, 65535].
+    """
     return max(0, min(65535, int(round(v))))

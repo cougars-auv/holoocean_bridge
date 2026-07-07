@@ -79,7 +79,12 @@ class StereoConverterNode(Node):
         self.get_logger().info("Initialization complete.")
 
     def create_camera_info(self, image_msg: Image) -> CameraInfo:
-        """Generate a identity CameraInfo message."""
+        """
+        Generate an identity CameraInfo message.
+
+        :param image_msg: Image whose header and dimensions seed the CameraInfo.
+        :return: CameraInfo with a pinhole intrinsics guess and identity rectification.
+        """
         info = CameraInfo()
         info.header = image_msg.header
         info.height = image_msg.height
