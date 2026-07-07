@@ -248,9 +248,7 @@ class ModemConverterNode(Node):
 
         if msg.msg_id != seatrac.CID_DAT_SEND:
             self.get_logger().warning(
-                f"Unsupported send CID 0x{msg.msg_id:02X}; only CID_DAT_SEND "
-                f"(0x{seatrac.CID_DAT_SEND:02X}) and CID_DAT_QUEUE_SET "
-                f"(0x{seatrac.CID_DAT_QUEUE_SET:02X}) are simulated. Dropping message."
+                f"Unsupported send CID 0x{msg.msg_id:02X}. Dropping message."
             )
             return
 
