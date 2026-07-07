@@ -52,10 +52,7 @@ class FinStatePublisherNode(Node):
             JointState, output_topic, qos_profile_system_default
         )
 
-        self.get_logger().info(
-            f"Fin state publisher started. Listening on {input_topic} "
-            f"and publishing on {output_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def listener_callback(self, msg: AgentCommand) -> None:
         """

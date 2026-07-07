@@ -79,9 +79,7 @@ class DvlConverterNode(Node):
             DVL, output_topic, qos_profile_sensor_data
         )
 
-        self.get_logger().info(
-            f"DVL converter started. Listening on {input_topic} and publishing on {output_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def config_callback(self, msg: ConfigCommand) -> None:
         """

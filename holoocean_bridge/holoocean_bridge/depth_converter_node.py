@@ -63,10 +63,7 @@ class DepthConverterNode(Node):
             Odometry, output_topic, qos_profile_system_default
         )
 
-        self.get_logger().info(
-            f"Depth converter started. Listening on {input_topic} and "
-            f"publishing on {output_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def listener_callback(self, msg: Odometry) -> None:
         """

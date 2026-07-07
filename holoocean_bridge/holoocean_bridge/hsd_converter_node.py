@@ -72,11 +72,7 @@ class HsdConverterNode(Node):
             qos_profile_system_default,
         )
 
-        self.get_logger().info(
-            f"HSD converter started. Listening on {self.hsd_topic} and publishing "
-            f"on {self.output_heading_topic}, {self.output_speed_topic}, and "
-            f"{self.output_depth_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def create_command_msg(self, value: float) -> DesiredCommand:
         """

@@ -69,10 +69,7 @@ class DvlOdomConverterNode(Node):
             Odometry, input_topic, self.listener_callback, qos_profile_system_default
         )
 
-        self.get_logger().info(
-            f"DVL odom converter started. Listening on {input_topic} and "
-            f"publishing on {output_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def listener_callback(self, msg: Odometry) -> None:
         """

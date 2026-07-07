@@ -110,10 +110,7 @@ class WrenchConverterNode(Node):
 
         self.velocity = 0.0
 
-        self.get_logger().info(
-            f"Wrench converter started. Listening on {agent_topic} and {control_topic}, "
-            f"publishing on {wrench_raw_topic} and {wrench_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def agent_callback(self, msg: AgentCommand) -> None:
         """

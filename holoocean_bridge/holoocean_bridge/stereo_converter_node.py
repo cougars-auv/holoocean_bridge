@@ -76,11 +76,7 @@ class StereoConverterNode(Node):
         )
         self.ts.registerCallback(self.sync_callback)
 
-        self.get_logger().info(
-            f"Stereo converter started. Listening on {self.front_input_topic} and "
-            f"{self.back_input_topic}, publishing images and info to {self.front_output_topic} "
-            f"and {self.back_output_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def create_camera_info(self, image_msg: Image) -> CameraInfo:
         """Generate a identity CameraInfo message."""

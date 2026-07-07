@@ -118,10 +118,7 @@ class ImuConverterNode(Node):
             TwistWithCovarianceStamped, bias_topic, qos_profile_system_default
         )
 
-        self.get_logger().info(
-            f"IMU converter started. Listening on {imu_input_topic} + {ahrs_input_topic}, "
-            f"publishing on {output_topic} and {bias_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def sync_callback(self, imu_msg: Imu, ahrs_msg: Vector3Stamped) -> None:
         """

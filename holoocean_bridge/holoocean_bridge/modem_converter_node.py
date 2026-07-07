@@ -136,10 +136,7 @@ class ModemConverterNode(Node):
 
         self.tick_timer = self.create_timer(self.tick_period_sec, self.tick_callback)
 
-        self.get_logger().info(
-            f"Modem converter started. Listening on {beacon_rec_topic} and {modem_send_topic}, "
-            f"publishing on {modem_rec_topic}, {beacon_send_topic}, and {modem_cmd_update_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def depth_callback(self, msg: Odometry) -> None:
         """

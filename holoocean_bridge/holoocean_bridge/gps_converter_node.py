@@ -73,9 +73,7 @@ class GpsConverterNode(Node):
             NavSatFix, output_topic, qos_profile_sensor_data
         )
 
-        self.get_logger().info(
-            f"GPS converter started. Listening on {input_topic} and publishing on {output_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def listener_callback(self, msg: Odometry) -> None:
         """

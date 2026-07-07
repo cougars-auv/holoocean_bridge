@@ -64,10 +64,7 @@ class ModemStatusConverterNode(Node):
             ModemStatus, output_topic, qos_profile_system_default
         )
 
-        self.get_logger().info(
-            f"Modem status converter started. Listening on {imu_input_topic} and "
-            f"{mag_input_topic}, publishing on {output_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def sync_callback(self, imu_msg: Imu, mag_msg: MagneticField) -> None:
         """

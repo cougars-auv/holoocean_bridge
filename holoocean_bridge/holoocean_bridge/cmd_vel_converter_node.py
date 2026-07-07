@@ -70,10 +70,7 @@ class CmdVelConverterNode(Node):
             4.0 * (thruster_x - thruster_y) * math.sqrt(0.5)
         )
 
-        self.get_logger().info(
-            f"Cmd Vel converter started. Listening on {input_topic} and "
-            f"publishing on {output_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def listener_callback(self, msg: TwistStamped) -> None:
         """

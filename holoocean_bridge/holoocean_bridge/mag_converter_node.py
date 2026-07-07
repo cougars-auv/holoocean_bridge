@@ -63,9 +63,7 @@ class MagConverterNode(Node):
             MagneticField, output_topic, qos_profile_system_default
         )
 
-        self.get_logger().info(
-            f"Mag converter started. Listening on {input_topic} and publishing on {output_topic}."
-        )
+        self.get_logger().info("Initialization complete.")
 
     def listener_callback(self, msg: MagneticField) -> None:
         """
