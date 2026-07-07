@@ -18,7 +18,7 @@ setup(
     zip_safe=True,
     maintainer="snelsondurrant",
     maintainer_email="snelsond@byu.edu",
-    description="HoloOcean conversion utilities for the CougUV",
+    description="CoUGARs HoloOcean simulator bridge and message converters.",
     license="Apache-2.0",
     extras_require={
         "test": [
