@@ -23,35 +23,27 @@ from holoocean_bridge.utils import seatrac_enums as seatrac
 
 
 def test_amsgtype_table() -> None:
-    """
-    Verify AMSGTYPE_E codes map to a contiguous 0..7 block of msg types.
-    """
+    """Verify AMSGTYPE_E codes map to a contiguous 0..7 block of msg types."""
     assert seatrac.AMSGTYPE_TO_MSG_TYPE[0] == "OWAY"
     assert seatrac.AMSGTYPE_TO_MSG_TYPE[7] == "MSG_RESPX"
     assert sorted(seatrac.AMSGTYPE_TO_MSG_TYPE) == list(range(8))
 
 
 def test_req_resp_consistency() -> None:
-    """
-    Verify every request maps to a response and the two sets are disjoint.
-    """
+    """Verify every request maps to a response and the two sets are disjoint."""
     assert seatrac.RESP_TYPES == set(seatrac.REQ_TO_RESP.values())
     assert set(seatrac.REQ_TO_RESP).isdisjoint(seatrac.RESP_TYPES)
 
 
 def test_field_flag_sets_reference_known_types() -> None:
-    """
-    Verify the USBL, range, and depth flag sets only hold known msg types.
-    """
+    """Verify the USBL, range, and depth flag sets only hold known msg types."""
     known = set(seatrac.AMSGTYPE_TO_MSG_TYPE.values())
     for flags in (seatrac.HAS_USBL, seatrac.HAS_RANGE, seatrac.HAS_Z):
         assert flags <= known
 
 
 def test_clamp_int16() -> None:
-    """
-    Verify clamp_int16 saturates to the signed 16-bit range and rounds.
-    """
+    """Verify clamp_int16 saturates to the signed 16-bit range and rounds."""
     assert seatrac.clamp_int16(0.0) == 0
     assert seatrac.clamp_int16(40000) == 32767
     assert seatrac.clamp_int16(-40000) == -32768
@@ -60,9 +52,7 @@ def test_clamp_int16() -> None:
 
 
 def test_clamp_uint16() -> None:
-    """
-    Verify clamp_uint16 saturates to the unsigned 16-bit range and rounds.
-    """
+    """Verify clamp_uint16 saturates to the unsigned 16-bit range and rounds."""
     assert seatrac.clamp_uint16(0.0) == 0
     assert seatrac.clamp_uint16(-5) == 0
     assert seatrac.clamp_uint16(100000) == 65535

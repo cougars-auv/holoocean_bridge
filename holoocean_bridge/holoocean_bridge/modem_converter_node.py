@@ -283,9 +283,7 @@ class ModemConverterNode(Node):
         self.publish_cmd_update(seatrac.CID_DAT_QUEUE_SET, msg.dest_id)
 
     def tick_callback(self) -> None:
-        """
-        Refresh the send queue once per tick, timing out stale REQs.
-        """
+        """Refresh the send queue once per tick, timing out stale REQs."""
         # A REQ that never gets a RESP eventually times out and frees the channel
         if self.pending_resp_target is not None:
             self.pending_resp_ticker += 1
@@ -305,9 +303,7 @@ class ModemConverterNode(Node):
             self.send_delay_ticker -= 1
 
     def release_auto_responses(self) -> None:
-        """
-        Queue staged auto-responses whose response delay has elapsed.
-        """
+        """Queue staged auto-responses whose response delay has elapsed."""
         ready = []
         for item in self.pending_auto_responses:
             item[1] -= 1
@@ -319,9 +315,7 @@ class ModemConverterNode(Node):
             self.send_queue.append((item[0], False))
 
     def attempt_send(self) -> None:
-        """
-        Transmit the next queued send, or reject it with CST_XCVR_BUSY if the channel is in use.
-        """
+        """Transmit the next queued send, or reject it with CST_XCVR_BUSY if the channel is in use."""
         if not self.send_queue or self.send_delay_ticker > 0:
             return
 

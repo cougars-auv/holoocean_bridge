@@ -1,3 +1,4 @@
+"""Module for stereo_converter_node.py."""
 # Copyright (c) 2026 BYU FROST Lab
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -82,9 +83,7 @@ class StereoConverterNode(Node):
         )
 
     def create_camera_info(self, image_msg: Image) -> CameraInfo:
-        """
-        Generate a identity CameraInfo message.
-        """
+        """Generate a identity CameraInfo message."""
         info = CameraInfo()
         info.header = image_msg.header
         info.height = image_msg.height
