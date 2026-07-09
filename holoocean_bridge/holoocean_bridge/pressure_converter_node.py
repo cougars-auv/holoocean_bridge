@@ -22,7 +22,7 @@ from sensor_msgs.msg import FluidPressure
 
 class PressureConverterNode(Node):
     """
-    ROS 2 node that converts HoloOcean depth odometry to fluid pressure messages and adds noise.
+    ROS 2 node that converts HoloOcean Odometry messages to noisy FluidPressure messages.
 
     :author: Nelson Durrant
     :date: May 2026

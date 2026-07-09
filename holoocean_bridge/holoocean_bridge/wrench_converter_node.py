@@ -25,7 +25,7 @@ from holoocean_interfaces.msg import AgentCommand
 
 class WrenchConverterNode(Node):
     """
-    ROS 2 node that converts HoloOcean agent/control commands back to WrenchStamped messages.
+    ROS 2 node that converts HoloOcean AgentCommand messages to WrenchStamped messages.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -114,7 +114,7 @@ class WrenchConverterNode(Node):
 
     def agent_callback(self, msg: AgentCommand) -> None:
         """
-        Convert a BlueROV2 thruster command into a body-frame wrench and publish it.
+        Convert a BlueROV2 command into a COM-frame wrench and publish it.
 
         :param msg: AgentCommand message containing thruster values.
         """
@@ -135,7 +135,7 @@ class WrenchConverterNode(Node):
 
     def control_callback(self, msg: AgentCommand) -> None:
         """
-        Convert a CougUV control command into a body-frame wrench and publish it.
+        Convert a CougUV command into a COM-frame wrench and publish it.
 
         :param msg: AgentCommand message containing control surface/thruster values.
         """
@@ -164,7 +164,7 @@ class WrenchConverterNode(Node):
 
     def velocity_callback(self, msg: TwistWithCovarianceStamped) -> None:
         """
-        Transform velocity into the body frame and store for control command processing.
+        Transform velocity into the COM frame and store for CougUV command processing.
 
         :param msg: Twist message containing current velocity in the world frame.
         """
@@ -173,7 +173,7 @@ class WrenchConverterNode(Node):
                 self.wrench_frame, self.map_frame, rclpy.time.Time()
             )
 
-            # Transform velocity into the body frame
+            # Transform velocity into the COM frame
             vel_world = Vector3Stamped()
             vel_world.header = msg.header
             vel_world.vector = msg.twist.twist.linear

@@ -25,7 +25,9 @@ from holoocean_bridge.utils import seatrac_enums as seatrac
 
 class ModemConverterNode(Node):
     """
-    ROS 2 node that bridges HoloOcean acoustic beacon data to/from seatrac_interfaces messages.
+    ROS 2 node that bridges AcousticBeaconSensor/Send and ModemRec/Send/CmdUpdate messages.
+
+    Should match the seatrac-ros2 queueing/protocol approach as closely as possible.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -264,8 +266,7 @@ class ModemConverterNode(Node):
 
     def set_dat_queue(self, msg: ModemSend) -> None:
         """
-        Stage RESP payload data for the next REQ from dest_id (or from any
-        beacon, if dest_id is 0). An empty payload clears the staged data.
+        Stage RESP payload for the next REQ from dest_id (0 = any beacon); empty payload clears it.
 
         :param msg: CID_DAT_QUEUE_SET modem command with the payload to stage.
         """

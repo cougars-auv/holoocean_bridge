@@ -22,7 +22,7 @@ from std_msgs.msg import Header
 
 class HsdConverterNode(Node):
     """
-    ROS 2 node that converts a ControlSetpoint message into HoloOcean desired command messages.
+    ROS 2 node that converts ControlSetpoint messages to HoloOcean DesiredCommand messages.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -90,7 +90,7 @@ class HsdConverterNode(Node):
 
     def hsd_callback(self, msg: ControlSetpoint) -> None:
         """
-        Process a ControlSetpoint message and publish heading, speed, and depth separately.
+        Process a setpoint message and publish heading, speed, and depth separately.
 
         :param msg: ControlSetpoint message containing heading, speed, and depth.
         """

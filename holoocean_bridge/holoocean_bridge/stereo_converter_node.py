@@ -21,7 +21,7 @@ import message_filters
 
 class StereoConverterNode(Node):
     """
-    ROS 2 node that converts HoloOcean stereo images to standard Image and CameraInfo messages.
+    ROS 2 node that converts HoloOcean Image messages to Image and CameraInfo messages.
 
     :author: Nelson Durrant
     :date: May 2026

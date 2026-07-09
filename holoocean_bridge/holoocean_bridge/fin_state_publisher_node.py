@@ -21,7 +21,7 @@ from sensor_msgs.msg import JointState
 
 class FinStatePublisherNode(Node):
     """
-    ROS 2 node that publishes fin states from HoloOcean control command messages.
+    ROS 2 node that publishes JointState messages from HoloOcean AgentCommand messages.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -56,7 +56,7 @@ class FinStatePublisherNode(Node):
 
     def listener_callback(self, msg: AgentCommand) -> None:
         """
-        Publish fin states from a HoloOcean agent command.
+        Map reported HoloOcean fin positions to TF-compatible joint states.
 
         :param msg: AgentCommand message containing fin states.
         """

@@ -28,7 +28,7 @@ _Q_NED_ENU = Rotation.from_quat([math.sqrt(0.5), math.sqrt(0.5), 0.0, 0.0]).inv(
 
 class DvlOdomConverterNode(Node):
     """
-    ROS 2 node that converts HoloOcean ground truth odometry to a simulated DVL A50 DVLDR message.
+    ROS 2 node that converts HoloOcean Odometry messages to DVLDR messages.
 
     :author: Nelson Durrant
     :date: May 2026
@@ -73,7 +73,7 @@ class DvlOdomConverterNode(Node):
 
     def listener_callback(self, msg: Odometry) -> None:
         """
-        Process ground truth Odometry and publish a simulated DVLDR message.
+        Transform HoloOcean ground truth odometry into the DVL frame and publish.
 
         :param msg: Odometry message from DynamicsSensorOdom (COM in HoloOcean frame).
         """

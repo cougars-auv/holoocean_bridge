@@ -25,9 +25,9 @@ from scipy.spatial.transform import Rotation
 
 class ImuConverterNode(Node):
     """
-    ROS 2 node that converts HoloOcean IMU and AHRS data to standard IMU messages and adds noise.
+    ROS 2 node that converts HoloOcean Imu and Vector3Stamped messages to noisy Imu messages.
 
-    Also models IMU bias as a random walk.
+    Models IMU accel/gyro bias as a random walk.
 
     :author: Nelson Durrant
     :date: May 2026

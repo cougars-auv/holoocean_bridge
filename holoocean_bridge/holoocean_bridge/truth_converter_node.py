@@ -23,7 +23,7 @@ from tf2_geometry_msgs import do_transform_pose
 
 class TruthConverterNode(Node):
     """
-    ROS 2 node that converts HoloOcean ground truth data to odometry messages.
+    ROS 2 node that converts HoloOcean ground truth Odometry messages to Odometry messages.
 
     Optionally publishes the map->base_link transform.
 
@@ -73,7 +73,7 @@ class TruthConverterNode(Node):
 
     def listener_callback(self, msg: Odometry) -> None:
         """
-        Republish HoloOcean ground truth as an odometry message.
+        Transform HoloOcean ground truth odometry into the base frame and publish.
 
         :param msg: Odometry message from DynamicsSensorOdom.
         """
