@@ -20,6 +20,7 @@ setup(
     maintainer_email="snelsond@byu.edu",
     description="CoUGARs HoloOcean simulator bridge and message converters.",
     license="Apache-2.0",
+    url="https://github.com/cougars-auv/holoocean_bridge",
     extras_require={
         "test": [
             "pytest",

@@ -6,6 +6,7 @@
   <description>CoUGARs HoloOcean simulator bridge and message converters.</description>
   <maintainer email="snelsond@byu.edu">snelsondurrant</maintainer>
   <license>Apache-2.0</license>
+  <url type="repository">https://github.com/cougars-auv/holoocean_bridge</url>
 
   <depend>coug_interfaces</depend>
   <depend>dvl_msgs</depend>
