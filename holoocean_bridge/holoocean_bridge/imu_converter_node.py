@@ -41,13 +41,13 @@ class ImuConverterNode(Node):
         self.declare_parameter("output_topic", "imu/data")
         self.declare_parameter("bias_topic", "imu/bias")
         self.declare_parameter("imu_frame", "imu_link")
-        self.declare_parameter("accel_noise_sigmas", [0.0078, 0.0078, 0.0078])
-        self.declare_parameter("gyro_noise_sigmas", [0.0012, 0.0012, 0.0012])
-        self.declare_parameter("ahrs_noise_sigmas", [0.00349, 0.00349, 0.01745])
+        self.declare_parameter("accel_noise_sigmas", [0.0079, 0.0079, 0.0079])
+        self.declare_parameter("gyro_noise_sigmas", [0.00074, 0.00074, 0.00074])
+        self.declare_parameter("ahrs_noise_sigmas", [0.00698, 0.00698, 0.01745])
         self.declare_parameter("add_noise", True)
         self.declare_parameter("add_bias", True)
-        self.declare_parameter("accel_bias_rw_sigmas", [1.05e-5, 1.05e-5, 1.05e-5])
-        self.declare_parameter("gyro_bias_rw_sigmas", [3.91e-6, 3.91e-6, 3.91e-6])
+        self.declare_parameter("accel_bias_rw_sigmas", [1.4e-4, 1.4e-4, 1.4e-4])
+        self.declare_parameter("gyro_bias_rw_sigmas", [3.39e-5, 3.39e-5, 3.39e-5])
 
         imu_input_topic = (
             self.get_parameter("imu_input_topic").get_parameter_value().string_value

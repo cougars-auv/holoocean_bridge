@@ -33,7 +33,7 @@ class MagConverterNode(Node):
         self.declare_parameter("input_topic", "MagnetometerSensor")
         self.declare_parameter("output_topic", "imu/mag")
         self.declare_parameter("mag_frame", "imu_link")
-        self.declare_parameter("noise_sigmas", [0.003, 0.003, 0.003])
+        self.declare_parameter("noise_sigmas", [0.006, 0.006, 0.006])
         self.declare_parameter("add_noise", True)
 
         input_topic = (
