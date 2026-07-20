@@ -166,19 +166,19 @@ class WrenchConverterNode(Node):
         """
         Transform velocity into the COM frame and store for CougUV command processing.
 
-        :param msg: Twist message containing current velocity in the world frame.
+        :param msg: Twist message containing current velocity in the map frame.
         """
         try:
             wrench_T_map_tf = self.tf_buffer.lookup_transform(
                 self.wrench_frame, self.map_frame, rclpy.time.Time()
             )
 
-            # Transform velocity into the COM frame
-            vel_world = Vector3Stamped()
-            vel_world.header = msg.header
-            vel_world.vector = msg.twist.twist.linear
+            # Transform map-frame velocity into the COM frame
+            vel_map = Vector3Stamped()
+            vel_map.header = msg.header
+            vel_map.vector = msg.twist.twist.linear
             vel_wrench = tf2_geometry_msgs.do_transform_vector3(
-                vel_world, wrench_T_map_tf
+                vel_map, wrench_T_map_tf
             )
             self.velocity = vel_wrench.vector.x
 

@@ -105,6 +105,7 @@ class TruthConverterNode(Node):
             )
             return
 
+        # Transform from COM-frame to base-frame pose in the map frame
         map_T_com_tf = TransformStamped()
         map_T_com_tf.header = p_com_in_map.header
         map_T_com_tf.child_frame_id = self.com_frame
