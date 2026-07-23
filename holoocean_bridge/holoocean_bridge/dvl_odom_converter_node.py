@@ -42,6 +42,7 @@ class DvlOdomConverterNode(Node):
         self.declare_parameter("com_frame", "com_link")
         self.declare_parameter("dvl_frame", "dvl_link")
         self.declare_parameter("map_frame", "map")
+        self.declare_parameter("pos_std", 0.05)
         input_topic = (
             self.get_parameter("input_topic").get_parameter_value().string_value
         )
@@ -57,6 +58,7 @@ class DvlOdomConverterNode(Node):
         self.map_frame = (
             self.get_parameter("map_frame").get_parameter_value().string_value
         )
+        self.pos_std = self.get_parameter("pos_std").get_parameter_value().double_value
 
         self.publisher = self.create_publisher(
             DVLDR, output_topic, qos_profile_sensor_data
@@ -139,6 +141,7 @@ class DvlOdomConverterNode(Node):
         dvl_msg.position.x = x_ned
         dvl_msg.position.y = y_ned
         dvl_msg.position.z = z_ned
+        dvl_msg.pos_std = self.pos_std
         dvl_msg.roll = roll
         dvl_msg.pitch = pitch
         dvl_msg.yaw = yaw

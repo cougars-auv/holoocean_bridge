@@ -381,6 +381,7 @@ def generate_launch_description() -> LaunchDescription:
                     {
                         "use_sim_time": use_sim_time,
                         "modem_frame": modem_link_frame,
+                        "add_noise": add_noise,
                     },
                 ],
             ),

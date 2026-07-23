@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import math
+import random
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_system_default
@@ -48,6 +49,9 @@ class ModemConverterNode(Node):
         self.declare_parameter("send_delay_sec", 0.4)
         self.declare_parameter("resp_delay_sec", 0.0)
         self.declare_parameter("resp_timeout_sec", 4.0)
+        self.declare_parameter("bearing_noise_sigmas", [0.01745, 0.01745])
+        self.declare_parameter("range_noise_sigma", 0.1)
+        self.declare_parameter("add_noise", True)
 
         beacon_rec_topic = (
             self.get_parameter("beacon_rec_topic").get_parameter_value().string_value
@@ -86,6 +90,17 @@ class ModemConverterNode(Node):
         )
         self.resp_timeout_sec = (
             self.get_parameter("resp_timeout_sec").get_parameter_value().double_value
+        )
+        self.bearing_noise_sigmas = (
+            self.get_parameter("bearing_noise_sigmas")
+            .get_parameter_value()
+            .double_array_value
+        )
+        self.range_noise_sigma = (
+            self.get_parameter("range_noise_sigma").get_parameter_value().double_value
+        )
+        self.add_noise = (
+            self.get_parameter("add_noise").get_parameter_value().bool_value
         )
 
         self.send_delay_ticks = max(
@@ -188,17 +203,23 @@ class ModemConverterNode(Node):
 
         modem_rec.includes_usbl = msg.msg_type in seatrac.HAS_USBL
         if modem_rec.includes_usbl:
-            modem_rec.usbl_azimuth = seatrac.clamp_int16(
-                math.degrees(msg.azimuth) * 10.0
-            )
+            azimuth = msg.azimuth
+            elevation = msg.elevation
+            if self.add_noise:
+                azimuth += random.gauss(0, self.bearing_noise_sigmas[0])
+                elevation += random.gauss(0, self.bearing_noise_sigmas[1])
+            modem_rec.usbl_azimuth = seatrac.clamp_int16(math.degrees(azimuth) * 10.0)
             modem_rec.usbl_elevation = seatrac.clamp_int16(
-                math.degrees(msg.elevation) * 10.0
+                math.degrees(elevation) * 10.0
             )
             modem_rec.usbl_channels = 4
 
         modem_rec.includes_range = msg.msg_type in seatrac.HAS_RANGE
         if modem_rec.includes_range:
-            modem_rec.range_dist = seatrac.clamp_uint16(msg.range * 10.0)
+            range_dist = msg.range
+            if self.add_noise:
+                range_dist += random.gauss(0, self.range_noise_sigma)
+            modem_rec.range_dist = seatrac.clamp_uint16(range_dist * 10.0)
 
         modem_rec.includes_position = msg.msg_type in seatrac.HAS_Z
         if modem_rec.includes_position:
